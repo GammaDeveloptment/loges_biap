@@ -1,0 +1,470 @@
+// Esquema de PostgreSQL para Loges-BIAP (Documento 005 - Modelo de Datos Empresarial,
+// mas auditoria_acceso del Documento 011, seccion 7).
+// Nombres de tabla/columna en espanol via @@map/@map: lenguaje ubicuo del negocio
+// (Documento 015, seccion 7), independiente de la convencion camelCase del cliente Prisma.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enumeraciones
+// ---------------------------------------------------------------------------
+
+enum NivelConfianza {
+  ALTA
+  MEDIA
+  BAJA
+
+  @@map("nivel_confianza")
+}
+
+enum TipoFuente {
+  registro_mercantil
+  registro_aduanero
+  camara_comercio
+  estadistica_comercio_exterior
+  sitio_publico_corporativo
+  otro
+
+  @@map("tipo_fuente")
+}
+
+enum RolEmpresa {
+  cargador_candidato
+  cliente_actual
+  competidor
+  proveedor_transportista
+  proveedor_aduanal
+  proveedor_bodega
+
+  @@map("rol_empresa")
+}
+
+enum EstadoEmpresa {
+  activa
+  descartada
+  inactiva
+
+  @@map("estado_empresa")
+}
+
+enum TipoOperacionComercioExterior {
+  importacion
+  exportacion
+
+  @@map("tipo_operacion_comercio_exterior")
+}
+
+enum TipoServicioProveedor {
+  transporte_terrestre
+  agente_aduanal
+  bodega_almacen
+
+  @@map("tipo_servicio_proveedor")
+}
+
+enum EstadoEvaluacionProveedor {
+  nuevo
+  en_evaluacion
+  aprobado
+  descartado
+
+  @@map("estado_evaluacion_proveedor")
+}
+
+enum TipoCompetidor {
+  naviera
+  freight_forwarder
+  agente_carga
+
+  @@map("tipo_competidor")
+}
+
+enum TipoCambioCompetidor {
+  nueva_ruta
+  nueva_alianza
+  expansion
+  otro
+
+  @@map("tipo_cambio_competidor")
+}
+
+enum TipoAgregacionTendencia {
+  sector
+  ruta
+  pais
+
+  @@map("tipo_agregacion_tendencia")
+}
+
+enum AreaUsuario {
+  comercial
+  gerencia_comercial
+  operaciones_compras
+  direccion_general
+  administrador
+
+  @@map("area_usuario")
+}
+
+enum TipoAccionInteraccion {
+  contactado
+  evaluado
+  descartado
+  marcado_relevante
+
+  @@map("tipo_accion_interaccion")
+}
+
+enum TipoTareaAgente {
+  descubrimiento_cargador
+  enriquecimiento_proveedor
+  monitoreo_competidor
+  actualizacion_tendencia
+
+  @@map("tipo_tarea_agente")
+}
+
+enum EstadoEjecucionAgente {
+  pendiente
+  en_progreso
+  completado
+  fallido
+
+  @@map("estado_ejecucion_agente")
+}
+
+enum SistemaDestinoSincronizacion {
+  crm
+  erp
+
+  @@map("sistema_destino_sincronizacion")
+}
+
+enum EstadoSincronizacion {
+  pendiente
+  exitosa
+  fallida
+
+  @@map("estado_sincronizacion")
+}
+
+enum AccionAuditoria {
+  login_exitoso
+  login_fallido
+  acceso_denegado
+
+  @@map("accion_auditoria")
+}
+
+// ---------------------------------------------------------------------------
+// Fuente (Documento 005, 3.1)
+// ---------------------------------------------------------------------------
+
+model Fuente {
+  id                       String     @id @default(uuid())
+  nombre                   String
+  tipo                     TipoFuente
+  pais                     String
+  urlBase                  String?    @map("url_base")
+  nivelConfianzaBase       NivelConfianza @map("nivel_confianza_base")
+  terminosUsoVerificados   Boolean    @default(false) @map("terminos_uso_verificados")
+  activa                   Boolean    @default(false)
+  aprobadoPor              String?    @map("aprobado_por")
+  fechaAprobacionLegal     DateTime?  @map("fecha_aprobacion_legal")
+  referenciaLegal          String?    @map("referencia_legal")
+  fechaAlta                DateTime   @default(now()) @map("fecha_alta")
+
+  empresasDescubiertas     Empresa[]                @relation("EmpresaFuenteDescubrimiento")
+  empresaRoles             EmpresaRol[]
+  empresaAtributos         EmpresaAtributo[]
+  contactos                Contacto[]
+  registrosComercio        RegistroComercioExterior[]
+  competidorCambios        CompetidorCambio[]
+  historialCambios         HistorialCambio[]
+
+  @@map("fuente")
+}
+
+// ---------------------------------------------------------------------------
+// Empresa y roles (Documento 005, 3.2-3.3)
+// ---------------------------------------------------------------------------
+
+model Empresa {
+  id                     String        @id @default(uuid())
+  nombreLegal            String        @map("nombre_legal")
+  nombreComercial        String?       @map("nombre_comercial")
+  pais                   String
+  identificadorFiscal    String?       @map("identificador_fiscal")
+  sector                 String?
+  sitioWeb               String?       @map("sitio_web")
+  estado                 EstadoEmpresa @default(activa)
+  fuenteDescubrimientoId String?       @map("fuente_descubrimiento_id")
+  fuenteDescubrimiento   Fuente?       @relation("EmpresaFuenteDescubrimiento", fields: [fuenteDescubrimientoId], references: [id])
+  nivelConfianzaGeneral  NivelConfianza? @map("nivel_confianza_general")
+  fechaDescubrimiento    DateTime      @default(now()) @map("fecha_descubrimiento")
+  fechaUltimaVerificacion DateTime?    @map("fecha_ultima_verificacion")
+
+  roles                  EmpresaRol[]
+  atributos              EmpresaAtributo[]
+  contactos              Contacto[]
+  registrosComercio      RegistroComercioExterior[]
+  proveedorPerfil        ProveedorPerfil?
+  competidorPerfil       CompetidorPerfil?
+  interacciones          InteraccionUsuario[]
+  sincronizaciones       SincronizacionExterna[]
+
+  @@map("empresa")
+}
+
+model EmpresaRol {
+  id         String     @id @default(uuid())
+  empresaId  String     @map("empresa_id")
+  empresa    Empresa    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  rol        RolEmpresa
+  fuenteId   String?    @map("fuente_id")
+  fuente     Fuente?    @relation(fields: [fuenteId], references: [id])
+  fechaAsignacion DateTime @default(now()) @map("fecha_asignacion")
+  vigente    Boolean    @default(true)
+
+  @@index([empresaId, rol])
+  @@map("empresa_rol")
+}
+
+// Atributos versionados de empresa (Documento 005, seccion 4): direccion,
+// tamano estimado, descripcion, etc. - campos que varias fuentes pueden
+// actualizar con el tiempo, cada version con su propia trazabilidad.
+model EmpresaAtributo {
+  id                String    @id @default(uuid())
+  empresaId         String    @map("empresa_id")
+  empresa           Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  atributo          String
+  valor             String
+  fuenteId          String    @map("fuente_id")
+  fuente            Fuente    @relation(fields: [fuenteId], references: [id])
+  nivelConfianza    NivelConfianza @map("nivel_confianza")
+  ejecucionAgenteId String?   @map("ejecucion_agente_id")
+  ejecucionAgente   EjecucionAgente? @relation(fields: [ejecucionAgenteId], references: [id])
+  fechaVerificacion DateTime  @default(now()) @map("fecha_verificacion")
+  vigente           Boolean   @default(true)
+
+  @@index([empresaId, atributo, vigente])
+  @@map("empresa_atributo")
+}
+
+model Contacto {
+  id                String    @id @default(uuid())
+  empresaId         String    @map("empresa_id")
+  empresa           Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  nombre            String
+  cargo             String?
+  email             String?
+  telefono          String?
+  fuenteId          String    @map("fuente_id")
+  fuente            Fuente    @relation(fields: [fuenteId], references: [id])
+  nivelConfianza    NivelConfianza @map("nivel_confianza")
+  fechaVerificacion DateTime  @default(now()) @map("fecha_verificacion")
+  vigente           Boolean   @default(true)
+
+  @@map("contacto")
+}
+
+// ---------------------------------------------------------------------------
+// Comercio exterior (Documento 005, 3.5)
+// ---------------------------------------------------------------------------
+
+model RegistroComercioExterior {
+  id                  String    @id @default(uuid())
+  empresaId           String    @map("empresa_id")
+  empresa             Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipoOperacion       TipoOperacionComercioExterior @map("tipo_operacion")
+  productoDescripcion String    @map("producto_descripcion")
+  partidaArancelaria  String?   @map("partida_arancelaria")
+  paisOrigen          String    @map("pais_origen")
+  paisDestino         String    @map("pais_destino")
+  volumenEstimado     Decimal?  @map("volumen_estimado")
+  unidadVolumen       String?   @map("unidad_volumen")
+  periodoInicio       DateTime  @map("periodo_inicio")
+  periodoFin          DateTime  @map("periodo_fin")
+  fuenteId            String    @map("fuente_id")
+  fuente              Fuente    @relation(fields: [fuenteId], references: [id])
+  nivelConfianza      NivelConfianza @map("nivel_confianza")
+  ejecucionAgenteId   String?   @map("ejecucion_agente_id")
+  ejecucionAgente     EjecucionAgente? @relation(fields: [ejecucionAgenteId], references: [id])
+  fechaDeteccion      DateTime  @default(now()) @map("fecha_deteccion")
+
+  @@map("registro_comercio_exterior")
+}
+
+// ---------------------------------------------------------------------------
+// Proveedores y competidores (Documento 005, 3.6-3.8)
+// ---------------------------------------------------------------------------
+
+model ProveedorPerfil {
+  id                   String   @id @default(uuid())
+  empresaId            String   @unique @map("empresa_id")
+  empresa              Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipoServicio         TipoServicioProveedor @map("tipo_servicio")
+  zonaCobertura        String?  @map("zona_cobertura")
+  estadoEvaluacion     EstadoEvaluacionProveedor @default(nuevo) @map("estado_evaluacion")
+  evaluadoPorUsuarioId String?  @map("evaluado_por_usuario_id")
+  evaluadoPor          Usuario? @relation(fields: [evaluadoPorUsuarioId], references: [id])
+  fechaEvaluacion      DateTime? @map("fecha_evaluacion")
+
+  @@map("proveedor_perfil")
+}
+
+model CompetidorPerfil {
+  id                  String   @id @default(uuid())
+  empresaId           String   @unique @map("empresa_id")
+  empresa             Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipo                TipoCompetidor
+  coberturaGeografica String?  @map("cobertura_geografica")
+  fechaUltimoMonitoreo DateTime? @map("fecha_ultimo_monitoreo")
+
+  cambios             CompetidorCambio[]
+
+  @@map("competidor_perfil")
+}
+
+model CompetidorCambio {
+  id                  String   @id @default(uuid())
+  competidorPerfilId  String   @map("competidor_perfil_id")
+  competidorPerfil    CompetidorPerfil @relation(fields: [competidorPerfilId], references: [id], onDelete: Cascade)
+  tipoCambio          TipoCambioCompetidor @map("tipo_cambio")
+  descripcion         String
+  fuenteId            String   @map("fuente_id")
+  fuente              Fuente   @relation(fields: [fuenteId], references: [id])
+  fechaDeteccion      DateTime @default(now()) @map("fecha_deteccion")
+
+  @@map("competidor_cambio")
+}
+
+// ---------------------------------------------------------------------------
+// Tendencias (Documento 005, 3.9)
+// ---------------------------------------------------------------------------
+
+model IndicadorTendencia {
+  id                String   @id @default(uuid())
+  tipoAgregacion    TipoAgregacionTendencia @map("tipo_agregacion")
+  clave             String
+  periodoInicio     DateTime @map("periodo_inicio")
+  periodoFin        DateTime @map("periodo_fin")
+  valorMetrica      Decimal  @map("valor_metrica")
+  variacionPct      Decimal? @map("variacion_pct")
+  fechaCalculo      DateTime @default(now()) @map("fecha_calculo")
+  ejecucionAgenteId String?  @map("ejecucion_agente_id")
+  ejecucionAgente   EjecucionAgente? @relation(fields: [ejecucionAgenteId], references: [id])
+
+  @@map("indicador_tendencia")
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios, interacciones y auditoria (Documento 005, 3.10-3.12; Documento 011, 7)
+// ---------------------------------------------------------------------------
+
+model Usuario {
+  id       String      @id @default(uuid())
+  nombre   String
+  email    String      @unique
+  password String
+  area     AreaUsuario
+  activo   Boolean     @default(true)
+
+  interacciones     InteraccionUsuario[]
+  proveedoresEvaluados ProveedorPerfil[]
+  auditorias        AuditoriaAcceso[]
+
+  @@map("usuario")
+}
+
+model InteraccionUsuario {
+  id         String                @id @default(uuid())
+  usuarioId  String                @map("usuario_id")
+  usuario    Usuario               @relation(fields: [usuarioId], references: [id])
+  empresaId  String                @map("empresa_id")
+  empresa    Empresa               @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  tipoAccion TipoAccionInteraccion @map("tipo_accion")
+  comentario String?
+  fecha      DateTime              @default(now())
+
+  @@index([empresaId, tipoAccion])
+  @@map("interaccion_usuario")
+}
+
+model SincronizacionExterna {
+  id              String     @id @default(uuid())
+  empresaId       String     @map("empresa_id")
+  empresa         Empresa    @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  sistemaDestino  SistemaDestinoSincronizacion @map("sistema_destino")
+  estado          EstadoSincronizacion @default(pendiente)
+  detalleError    String?    @map("detalle_error")
+  fechaIntento    DateTime   @default(now()) @map("fecha_intento")
+
+  @@map("sincronizacion_externa")
+}
+
+// Auditoria de acceso (Documento 011, seccion 7) - distinta de historial_cambio:
+// audita quien entro/a que intento acceder, no que cambio en los datos.
+model AuditoriaAcceso {
+  id         String          @id @default(uuid())
+  usuarioId  String?         @map("usuario_id")
+  usuario    Usuario?        @relation(fields: [usuarioId], references: [id])
+  accion     AccionAuditoria
+  recurso    String?
+  ipOrigen   String?         @map("ip_origen")
+  fecha      DateTime        @default(now())
+
+  @@map("auditoria_acceso")
+}
+
+// ---------------------------------------------------------------------------
+// Historial de cambios (Documento 005, seccion 5) - append-only.
+// La inmutabilidad (sin UPDATE/DELETE) se refuerza con una migracion de
+// permisos SQL, no solo por convencion de la aplicacion (Documento 014, fila 10).
+// ---------------------------------------------------------------------------
+
+model HistorialCambio {
+  id                String   @id @default(uuid())
+  entidadTipo       String   @map("entidad_tipo")
+  entidadId         String   @map("entidad_id")
+  campo             String?
+  valorAnterior     String?  @map("valor_anterior")
+  valorNuevo        String   @map("valor_nuevo")
+  fuenteId          String?  @map("fuente_id")
+  fuente            Fuente?  @relation(fields: [fuenteId], references: [id])
+  ejecucionAgenteId String?  @map("ejecucion_agente_id")
+  ejecucionAgente   EjecucionAgente? @relation(fields: [ejecucionAgenteId], references: [id])
+  fecha             DateTime @default(now())
+
+  @@index([entidadTipo, entidadId])
+  @@map("historial_cambio")
+}
+
+// ---------------------------------------------------------------------------
+// Motor de agentes (Documento 005, seccion 6; Documento 009)
+// ---------------------------------------------------------------------------
+
+model EjecucionAgente {
+  id               String                @id @default(uuid())
+  tipoTarea        TipoTareaAgente       @map("tipo_tarea")
+  criterios        Json?
+  estado           EstadoEjecucionAgente @default(pendiente)
+  resultadoResumen String?               @map("resultado_resumen")
+  colaJobId        String?               @map("cola_job_id")
+  fechaInicio      DateTime              @default(now()) @map("fecha_inicio")
+  fechaFin         DateTime?             @map("fecha_fin")
+
+  empresaAtributos    EmpresaAtributo[]
+  registrosComercio   RegistroComercioExterior[]
+  indicadoresTendencia IndicadorTendencia[]
+  historialCambios    HistorialCambio[]
+
+  @@map("ejecucion_agente")
+}

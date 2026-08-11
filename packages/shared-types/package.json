@@ -1,0 +1,15 @@
+{
+  "name": "@loges-biap/shared-types",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tipos y contratos compartidos entre apps/api y apps/web (Documento 004, seccion 7)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
