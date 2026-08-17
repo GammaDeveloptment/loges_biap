@@ -1,4 +1,11 @@
-import type { ApiErrorBody, LoginRequest, LoginResponse } from '@loges-biap/shared-types';
+import type {
+  ApiErrorBody,
+  LoginRequest,
+  LoginResponse,
+  NivelConfianza,
+  TipoFuente,
+} from '@loges-biap/shared-types';
+import { obtenerSesion } from './session';
 
 // El frontend nunca habla con la base de datos, solo con esta API (Documento
 // 006; Documento 004, seccion 3).
@@ -17,24 +24,32 @@ export class ApiError extends Error {
 async function request<T>(
   path: string,
   options: RequestInit = {},
+  conAuth = false,
 ): Promise<T> {
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> | undefined),
+  };
+
+  if (conAuth) {
+    const sesion = obtenerSesion();
+    if (sesion) {
+      headers.Authorization = `Bearer ${sesion.accessToken}`;
+    }
+  }
+
+  const response = await fetch(`${API_URL}${path}`, { ...options, headers });
 
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as ApiErrorBody | null;
     throw new ApiError(
-      body?.error.codigo ?? 'ERROR_DESCONOCIDO',
-      body?.error.mensaje ?? 'Ocurrio un error inesperado.',
-      body?.error.detalle,
+      body?.error?.codigo ?? 'ERROR_DESCONOCIDO',
+      body?.error?.mensaje ?? 'Ocurrio un error inesperado.',
+      body?.error?.detalle,
     );
   }
 
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 
@@ -43,4 +58,65 @@ export function login(credenciales: LoginRequest): Promise<LoginResponse> {
     method: 'POST',
     body: JSON.stringify(credenciales),
   });
+}
+
+// --- Documento 010, seccion 4.3 (Fuentes) ---
+
+export interface Fuente {
+  id: string;
+  nombre: string;
+  tipo: TipoFuente;
+  pais: string;
+  urlBase: string | null;
+  nivelConfianzaBase: NivelConfianza;
+  terminosUsoVerificados: boolean;
+  activa: boolean;
+  aprobadoPor: string | null;
+  fechaAprobacionLegal: string | null;
+  referenciaLegal: string | null;
+  fechaAlta: string;
+}
+
+export interface CrearFuenteInput {
+  nombre: string;
+  tipo: TipoFuente;
+  pais: string;
+  urlBase?: string;
+  nivelConfianzaBase: NivelConfianza;
+}
+
+export interface AprobarFuenteInput {
+  terminosUsoVerificados: boolean;
+  aprobadoPor: string;
+  fechaAprobacionLegal: string;
+  referenciaLegal: string;
+  activa: boolean;
+}
+
+export function listarFuentes(): Promise<Fuente[]> {
+  return request<Fuente[]>('/fuentes', {}, true);
+}
+
+export function crearFuente(input: CrearFuenteInput): Promise<Fuente> {
+  return request<Fuente>('/fuentes', { method: 'POST', body: JSON.stringify(input) }, true);
+}
+
+export function actualizarFuente(id: string, input: Partial<AprobarFuenteInput>): Promise<Fuente> {
+  return request<Fuente>(`/fuentes/${id}`, { method: 'PATCH', body: JSON.stringify(input) }, true);
+}
+
+// --- Documento 010, seccion 4.4 (Ejecuciones de Agente) ---
+
+export interface EjecucionAgente {
+  id: string;
+  tipoTarea: string;
+  estado: string;
+  resultadoResumen: string | null;
+  colaJobId: string | null;
+  fechaInicio: string;
+  fechaFin: string | null;
+}
+
+export function listarEjecucionesAgente(): Promise<EjecucionAgente[]> {
+  return request<EjecucionAgente[]>('/ejecuciones-agente', {}, true);
 }

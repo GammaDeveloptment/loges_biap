@@ -11,6 +11,17 @@
 export const NIVELES_CONFIANZA = ['ALTA', 'MEDIA', 'BAJA'] as const;
 export type NivelConfianza = (typeof NIVELES_CONFIANZA)[number];
 
+// Documento 005, seccion 3.1; Documento 012, seccion 1.
+export const TIPOS_FUENTE = [
+  'registro_mercantil',
+  'registro_aduanero',
+  'camara_comercio',
+  'estadistica_comercio_exterior',
+  'sitio_publico_corporativo',
+  'otro',
+] as const;
+export type TipoFuente = (typeof TIPOS_FUENTE)[number];
+
 export const ROLES_EMPRESA = [
   'cargador_candidato',
   'cliente_actual',

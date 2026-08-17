@@ -1,7 +1,7 @@
 # Documento 010 — Especificación de API
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.4 (HubSpot como CRM confirmado; Loges como ERP confirmado, vía base de datos de aterrizaje dedicada en vez de escritura directa a un módulo operativo)
+**Versión:** 0.5 (agrega `POST /fuentes`, descubierto como una omisión real al implementar la Entrega 6 — el alta de una fuente candidata no tenía endpoint propio)
 **Fecha:** Julio 2026
 
 ---
@@ -68,7 +68,8 @@ No existen rutas separadas `/cargadores`, `/proveedores`, `/competidores`: son v
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/api/v1/fuentes` | Lista de fuentes con `nivel_confianza_base`, país, estado. |
-| PATCH | `/api/v1/fuentes/{id}` | Activar/desactivar una fuente (`activa`). No permite editar el histórico ya recolectado. |
+| POST | `/api/v1/fuentes` | Registra una fuente **candidata** (nombre, tipo, país, `nivel_confianza_base`). Nace siempre con `activa = false` y `terminos_uso_verificados = false` — el alta y la aprobación legal son pasos distintos (Documento 012-B). *(Agregado en la implementación de la Entrega 6 — no estaba en la versión original de este documento.)* |
+| PATCH | `/api/v1/fuentes/{id}` | Activar/desactivar una fuente (`activa`) y registrar su aprobación legal (`terminos_uso_verificados`, `aprobado_por`, `fecha_aprobacion_legal`, `referencia_legal` — Documento 012-B, sección 6). **Regla dura:** el backend rechaza (`400`) cualquier intento de poner `activa = true` sin `terminos_uso_verificados = true` (Documento 012, sección 4), incluso si ambos campos vienen en la misma solicitud. No permite editar el histórico ya recolectado. |
 
 ### 4.4 Ejecuciones de Agente (monitor y disparo manual)
 
