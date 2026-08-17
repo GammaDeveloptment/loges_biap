@@ -147,6 +147,71 @@ export function crearUsuario(input: CrearUsuarioInput): Promise<Usuario> {
   return request<Usuario>('/usuarios', { method: 'POST', body: JSON.stringify(input) }, true);
 }
 
+// --- Documento 010, seccion 4.1 (Empresas) ---
+
+export interface DatoTrazable {
+  valor: string;
+  fuente: { id: string; nombre: string; tipo: string };
+  nivelConfianza: NivelConfianza;
+  fechaVerificacion: string;
+}
+
+export interface EmpresaResumen {
+  id: string;
+  nombreLegal: string;
+  pais: string;
+  sector: string | null;
+  nivelConfianzaGeneral: NivelConfianza | null;
+  fechaDescubrimiento: string;
+  roles: { rol: string }[];
+}
+
+export interface FichaEmpresa {
+  id: string;
+  nombreLegal: string;
+  nombreComercial: string | null;
+  pais: string;
+  identificadorFiscal: string | null;
+  sector: string | null;
+  estado: string;
+  nivelConfianzaGeneral: NivelConfianza | null;
+  fechaDescubrimiento: string;
+  fechaUltimaVerificacion: string | null;
+  roles: string[];
+  atributos: Record<string, DatoTrazable>;
+  contactos: { id: string; nombre: string; cargo: string | null; email: string | null; telefono: string | null }[];
+  registrosComercioExterior: {
+    id: string;
+    tipoOperacion: string;
+    productoDescripcion: string;
+    paisOrigen: string;
+    paisDestino: string;
+    nivelConfianza: NivelConfianza;
+    fuente: { nombre: string };
+  }[];
+  interaccionesRecientes: { id: string; tipoAccion: string; comentario: string | null; fecha: string; usuario: { nombre: string } }[];
+}
+
+export function listarEmpresas(params: { rol?: string; sector?: string; pais?: string }) {
+  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as string[][]);
+  return request<{ datos: EmpresaResumen[]; siguienteCursor: string | null }>(
+    `/empresas?${qs.toString()}`,
+    {},
+    true,
+  );
+}
+
+export function obtenerFichaEmpresa(id: string): Promise<FichaEmpresa> {
+  return request<FichaEmpresa>(`/empresas/${id}`, {}, true);
+}
+
+export function crearInteraccion(
+  empresaId: string,
+  input: { tipoAccion: string; comentario?: string },
+): Promise<unknown> {
+  return request(`/empresas/${empresaId}/interacciones`, { method: 'POST', body: JSON.stringify(input) }, true);
+}
+
 export function actualizarUsuario(
   id: string,
   input: Partial<Pick<Usuario, 'area' | 'activo'>>,

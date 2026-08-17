@@ -30,6 +30,32 @@ async function main() {
   console.log(
     `Sembrados ${USUARIOS_DE_PRUEBA.length} usuarios de prueba (password: ${PASSWORD_DEMO}) - usar solo en desarrollo local.`,
   );
+
+  // Fuente simulada (Documento 014, seccion 6): no es una fuente externa
+  // real, por eso se marca activa directamente - la regla de aprobacion
+  // legal del Documento 012-B aplica a fuentes que consultan datos de
+  // terceros reales, no a un catalogo sintetico que el propio proyecto
+  // controla para pruebas y desarrollo (Entrega 2, Documento 007).
+  const NOMBRE_FUENTE_SIMULADA = 'Fuente Simulada - Datos Sinteticos (Documento 014, seccion 6)';
+  const fuenteSimulada = await prisma.fuente.findFirst({
+    where: { nombre: NOMBRE_FUENTE_SIMULADA },
+  });
+  if (!fuenteSimulada) {
+    await prisma.fuente.create({
+      data: {
+        nombre: NOMBRE_FUENTE_SIMULADA,
+        tipo: 'otro',
+        pais: 'N/A',
+        nivelConfianzaBase: 'MEDIA',
+        terminosUsoVerificados: true,
+        activa: true,
+        aprobadoPor: 'Sistema (fuente simulada, no consulta datos reales de terceros)',
+        fechaAprobacionLegal: new Date(),
+        referenciaLegal: 'Documento 014, seccion 6 - no aplica evaluacion de 012-B a datos sinteticos',
+      },
+    });
+    console.log('Fuente simulada creada para la Entrega 2.');
+  }
 }
 
 main()

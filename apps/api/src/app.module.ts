@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { AgentesModule } from './agentes/agentes.module';
 import { FuentesModule } from './fuentes/fuentes.module';
+import { EmpresasModule } from './empresas/empresas.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { FuentesModule } from './fuentes/fuentes.module';
     UsuariosModule,
     AgentesModule,
     FuentesModule,
+    EmpresasModule,
   ],
   controllers: [AppController],
 })
