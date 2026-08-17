@@ -1,6 +1,6 @@
 # Prompt maestro para Claude Code — Proyecto Loges-BIAP
 
-> Estado: **Fase 1 (blueprint 001-015 + 012-B) validada por el cliente el 2026-07-30. Fase 2 autorizada por el cliente el 2026-08-11 ("arranquemos la fase 2") — Entrega 0 en curso.**
+> Estado: **Fase 1 (blueprint 001-015 + 012-B) validada por el cliente el 2026-07-30. Fase 2 autorizada por el cliente el 2026-08-11 ("arranquemos la fase 2") — Entrega 0 sustancialmente completa, Entrega 1 (Motor de Agentes) en curso.**
 >
 > **Entrega 0 (Documento 007) — progreso al 2026-08-17:**
 > - Monorepo creado en `apps/api` (NestJS), `apps/web` (Next.js — consolida la carpeta `front/`, que queda sin uso), `packages/shared-types`. Repositorio git inicializado, 3 commits.
@@ -11,6 +11,8 @@
 > - **Decisión de diseño nueva:** los enums compartidos en `packages/shared-types` se escribieron como *string literal unions*, no `enum` de TypeScript — un `enum` de TS no es asignable a los enums que Prisma genera de forma independiente aunque los valores coincidan (tipado nominal); un string literal union sí lo es.
 > - **Nota de seguridad:** las credenciales de root SSH y superusuario `postgres` del servidor fueron compartidas en texto plano en el chat el 2026-08-17 — se recomendó rotarlas. No quedaron guardadas en ningún archivo del repo ni en memoria; el `.env` local con la credencial del rol dedicado está gitignored.
 > - Pendiente explícito antes de que esta entrega pueda darse por completa: coordinar acceso VPN de desarrollo para el resto del equipo, máquina del runner de CI/CD y canal de alertas con el equipo de soporte de Gammacargo (Documento 013).
+>
+> **Entrega 1 (Documento 007) — progreso al 2026-08-17:** esqueleto del Motor de Agentes construido (`apps/api/src/agentes`) — cola BullMQ, `AgentesService.dispararManual` (valida permiso por `tipo_tarea` según el área, Documento 011 §3), `AgentesProcessor` (ciclo de vida completo pendiente→en_progreso→completado, sin razonamiento real todavía, Documento 009 §3), endpoints `GET/POST /ejecuciones-agente` (Documento 010 §4.4). Verificado que el servidor arranca y responde aunque Redis no esté disponible (reintenta en segundo plano, no tumba la app). **No verificado de extremo a extremo con una cola real**: no existe ningún Redis provisionado en la red de Gammacargo todavía (se confirmó puerto 6379 cerrado en 192.168.11.20) — pendiente decidir dónde vive (¿mismo servidor de aplicación, gestionado externo tipo Upstash?) antes de poder probar el flujo completo de encolado/ejecución.
 >
 > Progreso de documentos (`docs/`):
 > - 001 — Fundación: recibido, ya adaptado a Loges-BIAP/Gammacargo.
