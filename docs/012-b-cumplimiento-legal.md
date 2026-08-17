@@ -1,8 +1,8 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.1
-**Fecha:** Julio 2026
+**Versión:** 0.2
+**Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
 
@@ -66,6 +66,7 @@ Cada fuente evaluada se documenta con esta estructura (una fila = una fuente can
 - **Datos personales en `contacto` (Documento 005).** Antes de aprobar cualquier fuente que exponga nombre, cargo, correo o teléfono de una persona, debe confirmarse la base legal aplicable en el país de esa persona, no solo en el país de Gammacargo — el comercio exterior es, por definición, transfronterizo.
 - **Compilación de bases de datos completas vs. consulta puntual.** El Documento 012 (sección 1) ya limita los conectores a consultas puntuales o descargas estructuradas declaradas, en vez de extracción masiva — esto reduce el riesgo, pero la evaluación legal (sección 3) igual debe confirmarlo caso por caso, ya que algunos marcos protegen la compilación de una base de datos como derecho propio del compilador original, independientemente del método de extracción.
 - **Reglas de comercio exterior país-específicas.** El hecho de que una fuente de comercio exterior sea legal de usar en el país de origen del dato no garantiza que su uso por parte de una empresa de otro país (Gammacargo) esté igualmente permitido — esto debe evaluarse explícitamente, no asumirse por simetría.
+- **Registro mercantil/tributario general como fuente primaria de descubrimiento (agregado agosto 2026).** El cliente confirmó que **Perú es un mercado real objetivo**, y describió un patrón de negocio concreto: comerciantes pequeños que se agrupan para importar a través de un tercero consolidador, en vez de importar cada uno a su propio nombre (Documento 012, sección 3, nota agregada). Para este patrón, la fuente de comercio exterior no sirve para descubrir a los comerciantes individuales — solo al consolidador. La fuente que sí aplicaría es un **registro mercantil/tributario general filtrado por actividad económica y ubicación** (ej. RUC/SUNAT por rubro y distrito en Perú). Es una categoría de fuente ya contemplada en el Documento 012, pero con un peso distinto al que se le había dado hasta ahora — debe evaluarse con la misma prioridad que la fuente de comercio exterior, no como secundaria, cuando Gammacargo designe a quien ejecute la evaluación de la sección 3. Nota importante: al ser un registro tributario/mercantil general, es más probable que mezcle datos personales (persona natural con negocio propio, común en comercio informal) con datos corporativos — aplica con más fuerza el criterio del principio 3 de este documento.
 
 ## 6. Gobernanza y Responsabilidad de Aprobación
 

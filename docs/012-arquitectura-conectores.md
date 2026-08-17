@@ -1,8 +1,8 @@
 # Documento 012 — Arquitectura de Scraping y Conectores
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.1
-**Fecha:** Julio 2026
+**Versión:** 0.2
+**Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
 
@@ -56,6 +56,11 @@ Mapeo entre los módulos del Documento 003 y las categorías de fuente que neces
 | 3.2 Análisis de Competidores | Información corporativa pública (sitio propio del competidor, comunicados, registros mercantiles). |
 | 3.3 Enriquecimiento de Proveedores | Registros de licencias/permisos de transporte y agentes aduanales; registros mercantiles. |
 | 3.4 Inteligencia de Mercado y Tendencias | Estadísticas agregadas de comercio exterior (no requiere una fuente nueva — reutiliza lo recolectado por 3.1). |
+
+**Nota agregada (agosto 2026) — caso de importación consolidada:** el cliente identificó un patrón real que la tabla anterior no cubría bien: muchos cargadores potenciales objetivo (ej. comerciantes minoristas informales agrupados por rubro y zona, como los repuesteros de un centro comercial popular) **no importan a su propio nombre** — varios se agrupan y un tercero (consolidador/agente de carga) importa un contenedor completo a su nombre, distribuyendo la mercadería entre ellos ya en destino. Para este patrón, "Registros/estadísticas de comercio exterior" (3.1) solo revela al **consolidador**, nunca a los comerciantes individuales — son datos de categorías distintas, con propósitos distintos:
+
+- Para descubrir a los comerciantes individuales (el objetivo comercial real): **registro mercantil/tributario general filtrado por actividad económica y ubicación** (ej. RUC por rubro y distrito) — ya estaba nombrado como categoría en la tabla ("registros mercantiles"), pero antes se asumía secundario frente al dato de comercio exterior; para este patrón es la fuente **primaria**, no secundaria.
+- Para identificar al consolidador (relevante para 3.2, como competidor/intermediario, o para 3.3 si se evalúa como aliado en vez de competencia): sí aplica el dato de comercio exterior de la tabla, buscando importadores de alta frecuencia de mercadería variada consistente con reventa fragmentada, no un importador único de gran volumen homogéneo.
 
 ## 4. Ciclo de Vida de un Conector
 
