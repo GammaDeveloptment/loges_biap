@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Search, PhoneCall, X } from 'lucide-react';
 import {
   crearInteraccion,
   listarEmpresas,
@@ -9,6 +10,7 @@ import {
   type FichaEmpresa,
 } from '@/lib/api';
 import { ChipConfianza } from '@/components/ChipConfianza';
+import { IconButton } from '@/components/IconButton';
 
 // Documento 006, secciones 4.1 (busqueda) y 4.2 (ficha de empresa) - Entrega
 // 2, con datos del conector simulado (Documento 014, seccion 6) mientras
@@ -55,100 +57,138 @@ export default function CargadoresPage() {
   }
 
   return (
-    <div style={{ display: 'flex', gap: '2rem' }}>
-      <div style={{ flex: 1 }}>
-        <h1 style={{ marginBottom: '1rem' }}>Cargadores</h1>
-        {error && <p style={{ color: 'var(--color-peligro)', marginBottom: '1rem' }}>{error}</p>}
-
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <input placeholder="Sector" value={sector} onChange={(e) => setSector(e.target.value)} />
-          <input placeholder="Pais (ISO)" value={pais} onChange={(e) => setPais(e.target.value)} style={{ width: 80 }} />
-          <button className="primario" onClick={buscar}>Buscar</button>
+    <div className="pagina">
+      <div className="encabezado-pagina">
+        <div>
+          <h1>Cargadores</h1>
+          <p>Empresas candidatas detectadas por el Motor de Agentes (Documento 003, modulo 3.1).</p>
         </div>
-
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <thead>
-            <tr>
-              <th align="left">Empresa</th>
-              <th align="left">Sector</th>
-              <th align="left">Pais</th>
-              <th align="left">Confianza</th>
-            </tr>
-          </thead>
-          <tbody>
-            {empresas.map((e) => (
-              <tr key={e.id} style={{ cursor: 'pointer' }} onClick={() => abrirFicha(e.id)}>
-                <td>{e.nombreLegal}</td>
-                <td>{e.sector}</td>
-                <td>{e.pais}</td>
-                <td><ChipConfianza nivel={e.nivelConfianzaGeneral ?? 'MEDIA'} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
-      {ficha && (
-        <div className="card" style={{ flex: 1, alignSelf: 'flex-start' }}>
-          <h2>{ficha.nombreLegal}</h2>
-          <p style={{ color: 'var(--texto-secundario)', margin: '0.4rem 0 1rem' }}>
-            {ficha.sector} &middot; {ficha.pais} &middot; <ChipConfianza nivel={ficha.nivelConfianzaGeneral ?? 'MEDIA'} />
-          </p>
+      {error && <p style={{ color: 'var(--color-peligro)' }}>{error}</p>}
 
-          <div style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0' }}>
-            <button className="primario" onClick={() => marcar('contactado')}>Marcar como contactado</button>
-            <button onClick={() => marcar('descartado')}>Descartar</button>
+      <div className="diseno-lista-detalle">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espacio-4)' }}>
+          <div className="barra-herramientas">
+            <input placeholder="Sector" value={sector} onChange={(e) => setSector(e.target.value)} />
+            <input placeholder="Pais (ISO)" value={pais} onChange={(e) => setPais(e.target.value)} style={{ width: 90 }} />
+            <IconButton icono={Search} etiqueta="Buscar" variante="primario" onClick={buscar} />
           </div>
 
-          {Object.entries(ficha.atributos).length > 0 && (
-            <>
-              <h3>Datos adicionales</h3>
-              <ul>
-                {Object.entries(ficha.atributos).map(([clave, dato]) => (
-                  <li key={clave}>
-                    <strong>{clave}:</strong> {dato.valor}{' '}
-                    <ChipConfianza
-                      nivel={dato.nivelConfianza}
-                      titulo={`Fuente: ${dato.fuente.nombre} · Verificado: ${new Date(dato.fechaVerificacion).toLocaleString()}`}
-                    />
-                  </li>
+          <div className="contenedor-tabla">
+            <table>
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Sector</th>
+                  <th>Pais</th>
+                  <th>Confianza</th>
+                </tr>
+              </thead>
+              <tbody>
+                {empresas.map((e) => (
+                  <tr
+                    key={e.id}
+                    data-clicable
+                    className={ficha?.id === e.id ? 'fila-seleccionada' : ''}
+                    onClick={() => abrirFicha(e.id)}
+                  >
+                    <td>
+                      <div className="fila-empresa">
+                        <span className="avatar">{e.nombreLegal.slice(0, 2).toUpperCase()}</span>
+                        <strong>{e.nombreLegal}</strong>
+                      </div>
+                    </td>
+                    <td>{e.sector}</td>
+                    <td>{e.pais}</td>
+                    <td><ChipConfianza nivel={e.nivelConfianzaGeneral ?? 'MEDIA'} /></td>
+                  </tr>
                 ))}
-              </ul>
-            </>
-          )}
-
-          <h3 style={{ marginTop: '1rem' }}>Comercio exterior</h3>
-          <ul>
-            {ficha.registrosComercioExterior.map((r) => (
-              <li key={r.id}>
-                {r.tipoOperacion}: {r.productoDescripcion} ({r.paisOrigen} → {r.paisDestino}){' '}
-                <ChipConfianza nivel={r.nivelConfianza} /> <em>({r.fuente.nombre})</em>
-              </li>
-            ))}
-          </ul>
-
-          {ficha.contactos.length > 0 && (
-            <>
-              <h3 style={{ marginTop: '1rem' }}>Contactos</h3>
-              <ul>
-                {ficha.contactos.map((c) => (
-                  <li key={c.id}>{c.nombre} {c.cargo && `- ${c.cargo}`} {c.email}</li>
-                ))}
-              </ul>
-            </>
-          )}
-
-          <h3 style={{ marginTop: '1rem' }}>Actividad reciente</h3>
-          <ul>
-            {ficha.interaccionesRecientes.map((i) => (
-              <li key={i.id}>
-                {i.tipoAccion} por {i.usuario.nombre} el {new Date(i.fecha).toLocaleString()}
-                {i.comentario && ` — ${i.comentario}`}
-              </li>
-            ))}
-          </ul>
+                {empresas.length === 0 && (
+                  <tr><td colSpan={4} className="vacio">Sin resultados.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
+
+        {ficha && (
+          <div className="card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <h2>{ficha.nombreLegal}</h2>
+                <p style={{ color: 'var(--texto-secundario)', marginTop: '0.2rem' }}>
+                  {ficha.sector} &middot; {ficha.pais}
+                </p>
+              </div>
+              <ChipConfianza nivel={ficha.nivelConfianzaGeneral ?? 'MEDIA'} />
+            </div>
+
+            <div className="grupo-acciones" style={{ margin: '1.1rem 0' }}>
+              <IconButton icono={PhoneCall} etiqueta="Marcar como contactado" variante="primario" onClick={() => marcar('contactado')} />
+              <IconButton icono={X} etiqueta="Descartar" variante="peligro" onClick={() => marcar('descartado')} />
+            </div>
+
+            {Object.entries(ficha.atributos).length > 0 && (
+              <div className="card-seccion">
+                <h3>Datos adicionales</h3>
+                <div className="lista-simple" style={{ marginTop: '0.6rem' }}>
+                  {Object.entries(ficha.atributos).map(([clave, dato]) => (
+                    <div className="item" key={clave}>
+                      <span><strong style={{ textTransform: 'capitalize' }}>{clave}:</strong> {dato.valor}</span>
+                      <span className="meta">
+                        <ChipConfianza
+                          nivel={dato.nivelConfianza}
+                          titulo={`Fuente: ${dato.fuente.nombre} · Verificado: ${new Date(dato.fechaVerificacion).toLocaleString()}`}
+                        />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="card-seccion">
+              <h3>Comercio exterior</h3>
+              <div className="lista-simple" style={{ marginTop: '0.6rem' }}>
+                {ficha.registrosComercioExterior.map((r) => (
+                  <div className="item" key={r.id}>
+                    <span>{r.tipoOperacion}: {r.productoDescripcion} ({r.paisOrigen} → {r.paisDestino})</span>
+                    <span className="meta"><ChipConfianza nivel={r.nivelConfianza} /> {r.fuente.nombre}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {ficha.contactos.length > 0 && (
+              <div className="card-seccion">
+                <h3>Contactos</h3>
+                <div className="lista-simple" style={{ marginTop: '0.6rem' }}>
+                  {ficha.contactos.map((c) => (
+                    <div className="item" key={c.id}>
+                      <span>{c.nombre} {c.cargo && `- ${c.cargo}`}</span>
+                      <span className="meta">{c.email}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="card-seccion">
+              <h3>Actividad reciente</h3>
+              <div className="lista-simple" style={{ marginTop: '0.6rem' }}>
+                {ficha.interaccionesRecientes.map((i) => (
+                  <div className="item" key={i.id}>
+                    <span>{i.tipoAccion} por {i.usuario.nombre}</span>
+                    <span className="meta">{new Date(i.fecha).toLocaleString()}{i.comentario && ` — ${i.comentario}`}</span>
+                  </div>
+                ))}
+                {ficha.interaccionesRecientes.length === 0 && <p className="vacio">Sin actividad todavia.</p>}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

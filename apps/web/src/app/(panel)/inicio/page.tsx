@@ -30,9 +30,13 @@ export default function InicioPage() {
   if (!sesion) return null;
 
   return (
-    <div>
-      <h1>Hola, {sesion.usuario.nombre}</h1>
-      <p>{MENSAJE_POR_AREA[sesion.usuario.area]}</p>
+    <div className="pagina">
+      <div className="encabezado-pagina">
+        <div>
+          <h1>Hola, {sesion.usuario.nombre}</h1>
+          <p>{MENSAJE_POR_AREA[sesion.usuario.area]}</p>
+        </div>
+      </div>
     </div>
   );
 }

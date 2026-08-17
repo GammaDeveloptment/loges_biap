@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 import type { AreaUsuario } from '@loges-biap/shared-types';
+import { Plus, Power, Check } from 'lucide-react';
 import {
   actualizarFuente,
   actualizarUsuario,
@@ -14,6 +15,7 @@ import {
   type Fuente,
   type Usuario,
 } from '@/lib/api';
+import { IconButton } from '@/components/IconButton';
 
 const AREAS: AreaUsuario[] = [
   'comercial',
@@ -22,6 +24,13 @@ const AREAS: AreaUsuario[] = [
   'direccion_general',
   'administrador',
 ];
+
+const ETIQUETA_ESTADO_EJECUCION: Record<string, string> = {
+  pendiente: 'Pendiente',
+  en_progreso: 'En progreso',
+  completado: 'Completado',
+  fallido: 'Fallido',
+};
 
 // Documento 006, seccion 7: Usuarios, Fuentes y Monitor del Motor de
 // Agentes - las piezas de Administracion que ya tienen datos reales
@@ -121,14 +130,20 @@ export default function AdministracionPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <h1>Administracion</h1>
-      {error && <p style={{ color: 'crimson' }}>{error}</p>}
+    <div className="pagina">
+      <div className="encabezado-pagina">
+        <div>
+          <h1>Administracion</h1>
+          <p>Usuarios, fuentes y monitor del Motor de Agentes (Documento 006, seccion 7).</p>
+        </div>
+      </div>
 
-      <section>
+      {error && <p style={{ color: 'var(--color-peligro)' }}>{error}</p>}
+
+      <div className="card">
         <h2>Usuarios</h2>
 
-        <form onSubmit={onCrearUsuario} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+        <form onSubmit={onCrearUsuario} className="barra-herramientas" style={{ margin: '1rem 0' }}>
           <input name="nombre" placeholder="Nombre" required />
           <input name="email" type="email" placeholder="Correo" required />
           <input name="password" type="password" placeholder="Contrasena inicial" required minLength={8} />
@@ -138,49 +153,59 @@ export default function AdministracionPage() {
               <option key={a} value={a}>{a}</option>
             ))}
           </select>
-          <button type="submit">Crear usuario</button>
+          <IconButton icono={Plus} etiqueta="Crear usuario" variante="primario" tipo="submit" />
         </form>
 
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <thead>
-            <tr>
-              <th align="left">Nombre</th>
-              <th align="left">Correo</th>
-              <th align="left">Area</th>
-              <th align="left">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuarios.map((u) => (
-              <tr key={u.id} style={{ borderTop: '1px solid #eee' }}>
-                <td>{u.nombre}</td>
-                <td>{u.email}</td>
-                <td>
-                  <select value={u.area} onChange={(e) => onCambiarArea(u.id, e.target.value as AreaUsuario)}>
-                    {AREAS.map((a) => (
-                      <option key={a} value={a}>{a}</option>
-                    ))}
-                  </select>
-                </td>
-                <td>
-                  <button onClick={() => onToggleActivo(u)}>
-                    {u.activo ? '🟢 activo (desactivar)' : '⚪ inactivo (activar)'}
-                  </button>
-                </td>
+        <div className="contenedor-tabla">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Area</th>
+                <th>Estado</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {usuarios.map((u) => (
+                <tr key={u.id}>
+                  <td>
+                    <div className="fila-empresa">
+                      <span className="avatar">{u.nombre.slice(0, 2).toUpperCase()}</span>
+                      <strong>{u.nombre}</strong>
+                    </div>
+                  </td>
+                  <td>{u.email}</td>
+                  <td>
+                    <select value={u.area} onChange={(e) => onCambiarArea(u.id, e.target.value as AreaUsuario)}>
+                      {AREAS.map((a) => (
+                        <option key={a} value={a}>{a}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <span className="chip-estado">{u.activo ? 'Activo' : 'Inactivo'}</span>
+                    <IconButton
+                      icono={Power}
+                      etiqueta={u.activo ? 'Desactivar usuario' : 'Activar usuario'}
+                      variante={u.activo ? 'peligro' : 'primario'}
+                      onClick={() => onToggleActivo(u)}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      <section>
+      <div className="card">
         <h2>Fuentes</h2>
-        <p style={{ fontSize: '0.85rem', color: '#666' }}>
-          Ninguna fuente puede activarse sin aprobacion legal (Documento 012-B) -
-          el backend lo rechaza aunque se intente desde aqui.
+        <p style={{ color: 'var(--texto-secundario)', marginTop: '0.2rem' }}>
+          Ninguna fuente puede activarse sin aprobacion legal (Documento 012-B) — el backend lo rechaza aunque se intente desde aqui.
         </p>
 
-        <form onSubmit={onCrearFuente} style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+        <form onSubmit={onCrearFuente} className="barra-herramientas" style={{ margin: '1rem 0' }}>
           <input name="nombre" placeholder="Nombre de la fuente" required />
           <select name="tipo" required defaultValue="">
             <option value="" disabled>Tipo</option>
@@ -191,79 +216,85 @@ export default function AdministracionPage() {
             <option value="sitio_publico_corporativo">Sitio publico corporativo</option>
             <option value="otro">Otro</option>
           </select>
-          <input name="pais" placeholder="Pais (ISO)" required style={{ width: 80 }} />
+          <input name="pais" placeholder="Pais (ISO)" required style={{ width: 90 }} />
           <select name="nivelConfianzaBase" required defaultValue="">
             <option value="" disabled>Confianza base</option>
             <option value="ALTA">ALTA</option>
             <option value="MEDIA">MEDIA</option>
             <option value="BAJA">BAJA</option>
           </select>
-          <button type="submit">Registrar fuente candidata</button>
+          <IconButton icono={Plus} etiqueta="Registrar fuente candidata" variante="primario" tipo="submit" />
         </form>
 
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <thead>
-            <tr>
-              <th align="left">Nombre</th>
-              <th align="left">Pais</th>
-              <th align="left">Estado</th>
-              <th align="left">Aprobacion</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fuentes.map((f) => (
-              <tr key={f.id} style={{ borderTop: '1px solid #eee' }}>
-                <td>{f.nombre}</td>
-                <td>{f.pais}</td>
-                <td>
-                  {f.activa ? '🟢 activa' : f.terminosUsoVerificados ? '🟡 aprobada, inactiva' : '⚪ pendiente de aprobacion'}
-                </td>
-                <td>
-                  {f.terminosUsoVerificados ? (
-                    <span>{f.aprobadoPor} &middot; {f.referenciaLegal}</span>
-                  ) : (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        onAprobarYActivar(f.id, new FormData(e.currentTarget));
-                      }}
-                      style={{ display: 'flex', gap: '0.25rem' }}
-                    >
-                      <input name="aprobadoPor" placeholder="Aprobado por" required size={14} />
-                      <input name="referenciaLegal" placeholder="Referencia legal" required size={14} />
-                      <button type="submit">Aprobar y activar</button>
-                    </form>
-                  )}
-                </td>
+        <div className="contenedor-tabla">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Pais</th>
+                <th>Estado</th>
+                <th>Aprobacion</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {fuentes.map((f) => (
+                <tr key={f.id}>
+                  <td>{f.nombre}</td>
+                  <td>{f.pais}</td>
+                  <td>
+                    <span className="chip-estado">
+                      {f.activa ? 'Activa' : f.terminosUsoVerificados ? 'Aprobada, inactiva' : 'Pendiente de aprobacion'}
+                    </span>
+                  </td>
+                  <td>
+                    {f.terminosUsoVerificados ? (
+                      <span style={{ color: 'var(--texto-secundario)' }}>{f.aprobadoPor} &middot; {f.referenciaLegal}</span>
+                    ) : (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          onAprobarYActivar(f.id, new FormData(e.currentTarget));
+                        }}
+                        style={{ display: 'flex', gap: '0.4rem' }}
+                      >
+                        <input name="aprobadoPor" placeholder="Aprobado por" required size={14} />
+                        <input name="referenciaLegal" placeholder="Referencia legal" required size={14} />
+                        <IconButton icono={Check} etiqueta="Aprobar y activar" variante="primario" tipo="submit" />
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      <section>
+      <div className="card">
         <h2>Monitor del Motor de Agentes</h2>
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <thead>
-            <tr>
-              <th align="left">Tipo de tarea</th>
-              <th align="left">Estado</th>
-              <th align="left">Resultado</th>
-              <th align="left">Inicio</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ejecuciones.map((e) => (
-              <tr key={e.id} style={{ borderTop: '1px solid #eee' }}>
-                <td>{e.tipoTarea}</td>
-                <td>{e.estado}</td>
-                <td>{e.resultadoResumen ?? '—'}</td>
-                <td>{new Date(e.fechaInicio).toLocaleString()}</td>
+        <div className="contenedor-tabla" style={{ marginTop: '1rem' }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo de tarea</th>
+                <th>Estado</th>
+                <th>Resultado</th>
+                <th>Inicio</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {ejecuciones.map((e) => (
+                <tr key={e.id}>
+                  <td>{e.tipoTarea}</td>
+                  <td><span className="chip-estado">{ETIQUETA_ESTADO_EJECUCION[e.estado] ?? e.estado}</span></td>
+                  <td style={{ color: 'var(--texto-secundario)' }}>{e.resultadoResumen ?? '—'}</td>
+                  <td>{new Date(e.fechaInicio).toLocaleString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

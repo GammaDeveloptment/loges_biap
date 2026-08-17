@@ -33,53 +33,71 @@ export default function CompetidoresPage() {
   }
 
   return (
-    <div style={{ display: 'flex', gap: '2rem' }}>
-      <div style={{ flex: 1 }}>
-        <h1>Competidores</h1>
-        {error && <p style={{ color: 'crimson' }}>{error}</p>}
-
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <thead>
-            <tr>
-              <th align="left">Empresa</th>
-              <th align="left">Pais</th>
-            </tr>
-          </thead>
-          <tbody>
-            {empresas.map((e) => (
-              <tr key={e.id} style={{ borderTop: '1px solid #eee', cursor: 'pointer' }} onClick={() => abrirFicha(e.id)}>
-                <td>{e.nombreLegal}</td>
-                <td>{e.pais}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="pagina">
+      <div className="encabezado-pagina">
+        <div>
+          <h1>Competidores</h1>
+          <p>Navieras, freight forwarders y agentes de carga monitoreados (Documento 003, modulo 3.2).</p>
+        </div>
       </div>
 
-      {ficha && (
-        <div style={{ flex: 1, borderLeft: '1px solid #ddd', paddingLeft: '1.5rem' }}>
-          <h2>{ficha.nombreLegal}</h2>
-          {ficha.competidorPerfil && (
-            <>
-              <p>{ficha.competidorPerfil.tipo} &middot; {ficha.competidorPerfil.coberturaGeografica}</p>
-              <p style={{ fontSize: '0.85rem', color: '#666' }}>
-                Ultimo monitoreo: {ficha.competidorPerfil.fechaUltimoMonitoreo && new Date(ficha.competidorPerfil.fechaUltimoMonitoreo).toLocaleString()}
-              </p>
+      {error && <p style={{ color: 'var(--color-peligro)' }}>{error}</p>}
 
-              <h3>Alertas de cambios</h3>
-              <ul>
-                {ficha.competidorPerfil.cambios.map((c) => (
-                  <li key={c.id}>
-                    <strong>{c.tipoCambio}:</strong> {c.descripcion}{' '}
-                    <span style={{ color: '#888' }}>({new Date(c.fechaDeteccion).toLocaleDateString()})</span>
-                  </li>
-                ))}
-                {ficha.competidorPerfil.cambios.length === 0 && <li>Sin cambios detectados todavia.</li>}
-              </ul>
-            </>
-          )}
+      <div className="diseno-lista-detalle">
+        <div className="contenedor-tabla">
+          <table>
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>Pais</th>
+              </tr>
+            </thead>
+            <tbody>
+              {empresas.map((e) => (
+                <tr key={e.id} data-clicable className={ficha?.id === e.id ? 'fila-seleccionada' : ''} onClick={() => abrirFicha(e.id)}>
+                  <td>
+                    <div className="fila-empresa">
+                      <span className="avatar">{e.nombreLegal.slice(0, 2).toUpperCase()}</span>
+                      <strong>{e.nombreLegal}</strong>
+                    </div>
+                  </td>
+                  <td>{e.pais}</td>
+                </tr>
+              ))}
+              {empresas.length === 0 && <tr><td colSpan={2} className="vacio">Sin competidores monitoreados todavia.</td></tr>}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        {ficha && (
+          <div className="card">
+            <h2>{ficha.nombreLegal}</h2>
+            {ficha.competidorPerfil && (
+              <>
+                <p style={{ color: 'var(--texto-secundario)', marginTop: '0.2rem' }}>
+                  {ficha.competidorPerfil.tipo} &middot; {ficha.competidorPerfil.coberturaGeografica}
+                </p>
+                <p style={{ fontSize: '0.78rem', color: 'var(--texto-terciario)', marginTop: '0.3rem' }}>
+                  Ultimo monitoreo: {ficha.competidorPerfil.fechaUltimoMonitoreo && new Date(ficha.competidorPerfil.fechaUltimoMonitoreo).toLocaleString()}
+                </p>
+
+                <div className="card-seccion">
+                  <h3>Alertas de cambios</h3>
+                  <div className="lista-simple" style={{ marginTop: '0.6rem' }}>
+                    {ficha.competidorPerfil.cambios.map((c) => (
+                      <div className="item" key={c.id}>
+                        <span><span className="chip-estado">{c.tipoCambio}</span> {c.descripcion}</span>
+                        <span className="meta">{new Date(c.fechaDeteccion).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                    {ficha.competidorPerfil.cambios.length === 0 && <p className="vacio">Sin cambios detectados todavia.</p>}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

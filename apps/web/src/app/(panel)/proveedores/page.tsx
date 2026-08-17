@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { PhoneCall, Check, X } from 'lucide-react';
 import {
   crearInteraccion,
   listarEmpresas,
@@ -8,12 +9,19 @@ import {
   type EmpresaResumen,
   type FichaEmpresa,
 } from '@/lib/api';
+import { IconButton } from '@/components/IconButton';
 
 const ROLES_PROVEEDOR = ['proveedor_transportista', 'proveedor_aduanal', 'proveedor_bodega'];
 const ETIQUETA_ROL: Record<string, string> = {
   proveedor_transportista: 'Transporte terrestre',
   proveedor_aduanal: 'Agente aduanal',
   proveedor_bodega: 'Bodega/Almacen',
+};
+const ETIQUETA_ESTADO: Record<string, string> = {
+  nuevo: 'Nuevo',
+  en_evaluacion: 'En evaluacion',
+  aprobado: 'Aprobado',
+  descartado: 'Descartado',
 };
 
 // Documento 003, modulo 3.3 - Entrega 3, con conector simulado (Documento
@@ -38,7 +46,7 @@ export default function ProveedoresPage() {
   useEffect(() => {
     buscar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tipoServicio]);
 
   async function abrirFicha(id: string) {
     try {
@@ -60,83 +68,105 @@ export default function ProveedoresPage() {
   }
 
   return (
-    <div style={{ display: 'flex', gap: '2rem' }}>
-      <div style={{ flex: 1 }}>
-        <h1>Proveedores Logisticos</h1>
-        {error && <p style={{ color: 'crimson' }}>{error}</p>}
-
-        <div style={{ marginBottom: '1rem' }}>
-          <select value={tipoServicio} onChange={(e) => setTipoServicio(e.target.value)}>
-            <option value="">Todos los tipos</option>
-            {ROLES_PROVEEDOR.map((r) => (
-              <option key={r} value={r}>{ETIQUETA_ROL[r]}</option>
-            ))}
-          </select>{' '}
-          <button onClick={buscar}>Buscar</button>
+    <div className="pagina">
+      <div className="encabezado-pagina">
+        <div>
+          <h1>Proveedores Logisticos</h1>
+          <p>Transportistas, agentes aduanales y bodegas (Documento 003, modulo 3.3).</p>
         </div>
-
-        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
-          <thead>
-            <tr>
-              <th align="left">Empresa</th>
-              <th align="left">Tipo</th>
-              <th align="left">Pais</th>
-            </tr>
-          </thead>
-          <tbody>
-            {empresas.map((e) => (
-              <tr key={e.id} style={{ borderTop: '1px solid #eee', cursor: 'pointer' }} onClick={() => abrirFicha(e.id)}>
-                <td>{e.nombreLegal}</td>
-                <td>{ETIQUETA_ROL[e.roles[0]?.rol] ?? e.roles[0]?.rol}</td>
-                <td>{e.pais}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       </div>
 
-      {ficha && (
-        <div style={{ flex: 1, borderLeft: '1px solid #ddd', paddingLeft: '1.5rem' }}>
-          <h2>{ficha.nombreLegal}</h2>
-          {ficha.proveedorPerfil && (
-            <>
-              <p>
-                {ETIQUETA_ROL[`proveedor_${ficha.proveedorPerfil.tipoServicio === 'transporte_terrestre' ? 'transportista' : ficha.proveedorPerfil.tipoServicio === 'agente_aduanal' ? 'aduanal' : 'bodega'}`]}
-                {' '}&middot; {ficha.proveedorPerfil.zonaCobertura}
-              </p>
-              <p>
-                Estado de evaluacion: <strong>{ficha.proveedorPerfil.estadoEvaluacion}</strong>
-              </p>
-            </>
-          )}
+      {error && <p style={{ color: 'var(--color-peligro)' }}>{error}</p>}
 
-          <div style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0' }}>
-            <button onClick={() => evaluar('contactado')}>Contactar</button>
-            <button onClick={() => evaluar('evaluado')}>Aprobar (marcar evaluado)</button>
-            <button onClick={() => evaluar('descartado')}>Descartar</button>
+      <div className="diseno-lista-detalle">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espacio-4)' }}>
+          <div className="barra-herramientas">
+            <select value={tipoServicio} onChange={(e) => setTipoServicio(e.target.value)}>
+              <option value="">Todos los tipos</option>
+              {ROLES_PROVEEDOR.map((r) => (
+                <option key={r} value={r}>{ETIQUETA_ROL[r]}</option>
+              ))}
+            </select>
           </div>
 
-          {ficha.contactos.length > 0 && (
-            <>
-              <h3>Contactos</h3>
-              <ul>
-                {ficha.contactos.map((c) => (
-                  <li key={c.id}>{c.nombre} {c.cargo && `- ${c.cargo}`} {c.email}</li>
+          <div className="contenedor-tabla">
+            <table>
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Tipo</th>
+                  <th>Pais</th>
+                </tr>
+              </thead>
+              <tbody>
+                {empresas.map((e) => (
+                  <tr key={e.id} data-clicable className={ficha?.id === e.id ? 'fila-seleccionada' : ''} onClick={() => abrirFicha(e.id)}>
+                    <td>
+                      <div className="fila-empresa">
+                        <span className="avatar">{e.nombreLegal.slice(0, 2).toUpperCase()}</span>
+                        <strong>{e.nombreLegal}</strong>
+                      </div>
+                    </td>
+                    <td>{ETIQUETA_ROL[e.roles[0]?.rol] ?? e.roles[0]?.rol}</td>
+                    <td>{e.pais}</td>
+                  </tr>
                 ))}
-              </ul>
-            </>
-          )}
-
-          <h3>Actividad reciente</h3>
-          <ul>
-            {ficha.interaccionesRecientes.map((i) => (
-              <li key={i.id}>
-                {i.tipoAccion} por {i.usuario.nombre} el {new Date(i.fecha).toLocaleString()}
-              </li>
-            ))}
-          </ul>
+                {empresas.length === 0 && <tr><td colSpan={3} className="vacio">Sin resultados.</td></tr>}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
+
+        {ficha && (
+          <div className="card">
+            <h2>{ficha.nombreLegal}</h2>
+            {ficha.proveedorPerfil && (
+              <>
+                <p style={{ color: 'var(--texto-secundario)', marginTop: '0.2rem' }}>
+                  {ETIQUETA_ROL[`proveedor_${ficha.proveedorPerfil.tipoServicio === 'transporte_terrestre' ? 'transportista' : ficha.proveedorPerfil.tipoServicio === 'agente_aduanal' ? 'aduanal' : 'bodega'}`]}
+                  {' '}&middot; {ficha.proveedorPerfil.zonaCobertura}
+                </p>
+                <span className="chip-estado" style={{ marginTop: '0.6rem' }}>
+                  {ETIQUETA_ESTADO[ficha.proveedorPerfil.estadoEvaluacion] ?? ficha.proveedorPerfil.estadoEvaluacion}
+                </span>
+              </>
+            )}
+
+            <div className="grupo-acciones" style={{ margin: '1.1rem 0' }}>
+              <IconButton icono={PhoneCall} etiqueta="Contactar" onClick={() => evaluar('contactado')} />
+              <IconButton icono={Check} etiqueta="Aprobar (marcar evaluado)" variante="primario" onClick={() => evaluar('evaluado')} />
+              <IconButton icono={X} etiqueta="Descartar" variante="peligro" onClick={() => evaluar('descartado')} />
+            </div>
+
+            {ficha.contactos.length > 0 && (
+              <div className="card-seccion">
+                <h3>Contactos</h3>
+                <div className="lista-simple" style={{ marginTop: '0.6rem' }}>
+                  {ficha.contactos.map((c) => (
+                    <div className="item" key={c.id}>
+                      <span>{c.nombre} {c.cargo && `- ${c.cargo}`}</span>
+                      <span className="meta">{c.email}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="card-seccion">
+              <h3>Actividad reciente</h3>
+              <div className="lista-simple" style={{ marginTop: '0.6rem' }}>
+                {ficha.interaccionesRecientes.map((i) => (
+                  <div className="item" key={i.id}>
+                    <span>{i.tipoAccion} por {i.usuario.nombre}</span>
+                    <span className="meta">{new Date(i.fecha).toLocaleString()}</span>
+                  </div>
+                ))}
+                {ficha.interaccionesRecientes.length === 0 && <p className="vacio">Sin actividad todavia.</p>}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
