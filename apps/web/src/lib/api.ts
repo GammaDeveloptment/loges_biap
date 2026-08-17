@@ -190,6 +190,18 @@ export interface FichaEmpresa {
     fuente: { nombre: string };
   }[];
   interaccionesRecientes: { id: string; tipoAccion: string; comentario: string | null; fecha: string; usuario: { nombre: string } }[];
+  proveedorPerfil: {
+    tipoServicio: string;
+    zonaCobertura: string | null;
+    estadoEvaluacion: string;
+    fechaEvaluacion: string | null;
+  } | null;
+  competidorPerfil: {
+    tipo: string;
+    coberturaGeografica: string | null;
+    fechaUltimoMonitoreo: string | null;
+    cambios: { id: string; tipoCambio: string; descripcion: string; fechaDeteccion: string }[];
+  } | null;
 }
 
 export function listarEmpresas(params: { rol?: string; sector?: string; pais?: string }) {

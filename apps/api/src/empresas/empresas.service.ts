@@ -69,6 +69,8 @@ export class EmpresasService {
           registrosComercio: { include: { fuente: true }, orderBy: { fechaDeteccion: 'desc' } },
           interacciones: { orderBy: { fecha: 'desc' }, take: 10, include: { usuario: { select: { nombre: true } } } },
           fuenteDescubrimiento: true,
+          proveedorPerfil: true,
+          competidorPerfil: { include: { cambios: { orderBy: { fechaDeteccion: 'desc' } } } },
         },
       }),
     );
@@ -114,6 +116,8 @@ export class EmpresasService {
       contactos: empresa.contactos,
       registrosComercioExterior: empresa.registrosComercio,
       interaccionesRecientes: empresa.interacciones,
+      proveedorPerfil: empresa.proveedorPerfil,
+      competidorPerfil: empresa.competidorPerfil,
     };
   }
 
@@ -127,21 +131,72 @@ export class EmpresasService {
     });
   }
 
-  async crearInteraccion(empresaId: string, usuarioId: string, dto: CrearInteraccionDto) {
-    const empresa = await this.prisma.empresa.findUnique({ where: { id: empresaId } });
-    if (!empresa) {
-      throw new NotFoundException('No existe una empresa con el id solicitado.');
-    }
+  async crearInteraccion(
+    empresaId: string,
+    usuarioId: string,
+    area: AreaUsuario,
+    dto: CrearInteraccionDto,
+  ) {
+    // proveedor_perfil tiene RLS por area (Documento 011, seccion 5) - el
+    // include y el update de mas abajo deben ir dentro de paraArea, o
+    // devuelven vacio/no aplican en silencio (mismo bug que en Entrega 2).
+    return this.prisma.paraArea(area, async (tx) => {
+      const empresa = await tx.empresa.findUnique({
+        where: { id: empresaId },
+        include: { proveedorPerfil: true },
+      });
+      if (!empresa) {
+        throw new NotFoundException('No existe una empresa con el id solicitado.');
+      }
 
-    // interaccion_usuario tampoco tiene RLS por area (Documento 011, seccion
-    // 5 no la incluyo en el patron replicado) - no necesita paraArea.
-    return this.prisma.interaccionUsuario.create({
-      data: {
-        empresaId,
-        usuarioId,
-        tipoAccion: dto.tipoAccion,
-        comentario: dto.comentario,
-      },
+      const interaccion = await tx.interaccionUsuario.create({
+        data: {
+          empresaId,
+          usuarioId,
+          tipoAccion: dto.tipoAccion,
+          comentario: dto.comentario,
+        },
+      });
+
+      // Documento 003, seccion 3.3 / Documento 006, seccion 6: el ciclo de
+      // vida generico (Nuevo -> Contactado -> Evaluado -> Aprobado/Descartado)
+      // tambien mueve el estado de evaluacion propio del proveedor, si aplica.
+      if (empresa.proveedorPerfil) {
+        const nuevoEstado =
+          dto.tipoAccion === 'contactado'
+            ? 'en_evaluacion'
+            : dto.tipoAccion === 'evaluado'
+              ? 'aprobado'
+              : dto.tipoAccion === 'descartado'
+                ? 'descartado'
+                : undefined;
+
+        if (nuevoEstado) {
+          await tx.proveedorPerfil.update({
+            where: { empresaId },
+            data: {
+              estadoEvaluacion: nuevoEstado,
+              evaluadoPorUsuarioId: usuarioId,
+              fechaEvaluacion: new Date(),
+            },
+          });
+        }
+      }
+
+      return interaccion;
+    });
+  }
+
+  async listarCambiosCompetidor(empresaId: string, area: AreaUsuario) {
+    return this.prisma.paraArea(area, async (tx) => {
+      const perfil = await tx.competidorPerfil.findUnique({ where: { empresaId } });
+      if (!perfil) {
+        throw new NotFoundException('Esta empresa no tiene perfil de competidor.');
+      }
+      return tx.competidorCambio.findMany({
+        where: { competidorPerfilId: perfil.id },
+        orderBy: { fechaDeteccion: 'desc' },
+      });
     });
   }
 }

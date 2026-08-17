@@ -4,6 +4,8 @@ import type { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { COLA_AGENTES } from './agentes.service';
 import { DescubrimientoCargadoresHandler } from './handlers/descubrimiento-cargadores.handler';
+import { EnriquecimientoProveedoresHandler } from './handlers/enriquecimiento-proveedores.handler';
+import { MonitoreoCompetidoresHandler } from './handlers/monitoreo-competidores.handler';
 
 interface DatosJobAgente {
   ejecucionId: string;
@@ -20,6 +22,8 @@ export class AgentesProcessor extends WorkerHost {
   constructor(
     private readonly prisma: PrismaService,
     private readonly descubrimientoCargadores: DescubrimientoCargadoresHandler,
+    private readonly enriquecimientoProveedores: EnriquecimientoProveedoresHandler,
+    private readonly monitoreoCompetidores: MonitoreoCompetidoresHandler,
   ) {
     super();
   }
@@ -57,14 +61,20 @@ export class AgentesProcessor extends WorkerHost {
     const ejecucion = await this.prisma.ejecucionAgente.findUniqueOrThrow({
       where: { id: ejecucionId },
     });
-    const criterios = (ejecucion.criterios ?? {}) as { sector?: string; pais?: string };
+    const criterios = (ejecucion.criterios ?? {}) as Record<string, unknown>;
 
     switch (job.name) {
       case 'descubrimiento_cargador':
-        return this.descubrimientoCargadores.ejecutar(ejecucionId, criterios);
+        return this.descubrimientoCargadores.ejecutar(ejecucionId, criterios as { sector?: string; pais?: string });
+      case 'enriquecimiento_proveedor':
+        return this.enriquecimientoProveedores.ejecutar(
+          ejecucionId,
+          criterios as { zona?: string; tipoServicio?: 'transporte_terrestre' | 'agente_aduanal' | 'bodega_almacen' },
+        );
+      case 'monitoreo_competidor':
+        return this.monitoreoCompetidores.ejecutar(ejecucionId, criterios as { pais?: string });
       default:
-        // Enriquecimiento de proveedores, monitoreo de competidores y
-        // actualizacion de tendencias siguen como esqueleto (Entrega 3/6).
+        // Actualizacion de tendencias sigue como esqueleto (Entrega 6).
         this.logger.log(`Ejecucion ${ejecucionId} (${job.name}) - esqueleto sin logica real todavia.`);
         return 'Tarea de esqueleto ejecutada sin logica de negocio real (Documento 007, entregas siguientes).';
     }

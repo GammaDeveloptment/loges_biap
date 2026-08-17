@@ -26,12 +26,17 @@ export class EmpresasController {
     return this.empresasService.historial(id);
   }
 
+  @Get(':id/cambios')
+  cambiosCompetidor(@Param('id') id: string, @Req() req: Request & { user: JwtClaims }) {
+    return this.empresasService.listarCambiosCompetidor(id, req.user.area);
+  }
+
   @Post(':id/interacciones')
   crearInteraccion(
     @Param('id') id: string,
     @Body() dto: CrearInteraccionDto,
     @Req() req: Request & { user: JwtClaims },
   ) {
-    return this.empresasService.crearInteraccion(id, req.user.sub, dto);
+    return this.empresasService.crearInteraccion(id, req.user.sub, req.user.area, dto);
   }
 }
