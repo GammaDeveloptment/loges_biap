@@ -121,31 +121,78 @@ export class DescubrimientoCargadoresHandler {
       });
     }
 
+    // Documento 005, seccion 4: un atributo nuevo solo se inserta si el
+    // valor vigente cambio - si es identico, re-detectarlo en cada corrida
+    // no es un hallazgo nuevo, es el mismo dato. Evita duplicar filas cada
+    // vez que el conector (real o simulado) vuelve a reportar lo mismo.
     if (candidato.direccion) {
-      await tx.empresaAtributo.create({
-        data: {
-          empresaId: empresa.id,
-          atributo: 'direccion',
-          valor: candidato.direccion,
-          fuenteId: fuente.id,
-          nivelConfianza: fuente.nivelConfianzaBase,
-          ejecucionAgenteId: ejecucionId,
-        },
+      const atributoVigente = await tx.empresaAtributo.findFirst({
+        where: { empresaId: empresa.id, atributo: 'direccion', vigente: true },
       });
+      if (!atributoVigente) {
+        await tx.empresaAtributo.create({
+          data: {
+            empresaId: empresa.id,
+            atributo: 'direccion',
+            valor: candidato.direccion,
+            fuenteId: fuente.id,
+            nivelConfianza: fuente.nivelConfianzaBase,
+            ejecucionAgenteId: ejecucionId,
+          },
+        });
+      } else if (atributoVigente.valor !== candidato.direccion) {
+        await tx.empresaAtributo.update({
+          where: { id: atributoVigente.id },
+          data: { vigente: false },
+        });
+        await tx.empresaAtributo.create({
+          data: {
+            empresaId: empresa.id,
+            atributo: 'direccion',
+            valor: candidato.direccion,
+            fuenteId: fuente.id,
+            nivelConfianza: fuente.nivelConfianzaBase,
+            ejecucionAgenteId: ejecucionId,
+          },
+        });
+      }
     }
 
     if (candidato.contacto) {
-      await tx.contacto.create({
-        data: {
-          empresaId: empresa.id,
-          nombre: candidato.contacto.nombre,
-          cargo: candidato.contacto.cargo,
-          email: candidato.contacto.email,
-          telefono: candidato.contacto.telefono,
-          fuenteId: fuente.id,
-          nivelConfianza: fuente.nivelConfianzaBase,
-        },
+      const contactoVigente = await tx.contacto.findFirst({
+        where: { empresaId: empresa.id, nombre: candidato.contacto.nombre, vigente: true },
       });
+      if (!contactoVigente) {
+        await tx.contacto.create({
+          data: {
+            empresaId: empresa.id,
+            nombre: candidato.contacto.nombre,
+            cargo: candidato.contacto.cargo,
+            email: candidato.contacto.email,
+            telefono: candidato.contacto.telefono,
+            fuenteId: fuente.id,
+            nivelConfianza: fuente.nivelConfianzaBase,
+          },
+        });
+      }
+    }
+
+    // registro_comercio_exterior es un log de evidencia (Documento 005,
+    // seccion 3.5) sin columna "vigente" - pero re-detectar exactamente el
+    // mismo hecho (mismo tipo/producto/origen/destino) en cada corrida no es
+    // evidencia nueva, es la misma. Se deduplica por contenido, no por fecha.
+    const registroExistente = await tx.registroComercioExterior.findFirst({
+      where: {
+        empresaId: empresa.id,
+        fuenteId: fuente.id,
+        tipoOperacion: candidato.comercioExterior.tipoOperacion,
+        productoDescripcion: candidato.comercioExterior.productoDescripcion,
+        paisOrigen: candidato.comercioExterior.paisOrigen,
+        paisDestino: candidato.comercioExterior.paisDestino,
+      },
+    });
+    if (registroExistente) {
+      return esNueva ? 'nuevo' : 'actualizado';
     }
 
     await tx.registroComercioExterior.create({
