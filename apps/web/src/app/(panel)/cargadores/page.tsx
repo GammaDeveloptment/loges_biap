@@ -8,8 +8,7 @@ import {
   type EmpresaResumen,
   type FichaEmpresa,
 } from '@/lib/api';
-
-const ICONO_CONFIANZA: Record<string, string> = { ALTA: '🟢', MEDIA: '🟡', BAJA: '⚪' };
+import { ChipConfianza } from '@/components/ChipConfianza';
 
 // Documento 006, secciones 4.1 (busqueda) y 4.2 (ficha de empresa) - Entrega
 // 2, con datos del conector simulado (Documento 014, seccion 6) mientras
@@ -58,13 +57,13 @@ export default function CargadoresPage() {
   return (
     <div style={{ display: 'flex', gap: '2rem' }}>
       <div style={{ flex: 1 }}>
-        <h1>Cargadores</h1>
-        {error && <p style={{ color: 'crimson' }}>{error}</p>}
+        <h1 style={{ marginBottom: '1rem' }}>Cargadores</h1>
+        {error && <p style={{ color: 'var(--color-peligro)', marginBottom: '1rem' }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <input placeholder="Sector" value={sector} onChange={(e) => setSector(e.target.value)} />
           <input placeholder="Pais (ISO)" value={pais} onChange={(e) => setPais(e.target.value)} style={{ width: 80 }} />
-          <button onClick={buscar}>Buscar</button>
+          <button className="primario" onClick={buscar}>Buscar</button>
         </div>
 
         <table style={{ borderCollapse: 'collapse', width: '100%' }}>
@@ -78,11 +77,11 @@ export default function CargadoresPage() {
           </thead>
           <tbody>
             {empresas.map((e) => (
-              <tr key={e.id} style={{ borderTop: '1px solid #eee', cursor: 'pointer' }} onClick={() => abrirFicha(e.id)}>
+              <tr key={e.id} style={{ cursor: 'pointer' }} onClick={() => abrirFicha(e.id)}>
                 <td>{e.nombreLegal}</td>
                 <td>{e.sector}</td>
                 <td>{e.pais}</td>
-                <td>{ICONO_CONFIANZA[e.nivelConfianzaGeneral ?? 'MEDIA']} {e.nivelConfianzaGeneral}</td>
+                <td><ChipConfianza nivel={e.nivelConfianzaGeneral ?? 'MEDIA'} /></td>
               </tr>
             ))}
           </tbody>
@@ -90,12 +89,14 @@ export default function CargadoresPage() {
       </div>
 
       {ficha && (
-        <div style={{ flex: 1, borderLeft: '1px solid #ddd', paddingLeft: '1.5rem' }}>
+        <div className="card" style={{ flex: 1, alignSelf: 'flex-start' }}>
           <h2>{ficha.nombreLegal}</h2>
-          <p>{ficha.sector} &middot; {ficha.pais} &middot; {ICONO_CONFIANZA[ficha.nivelConfianzaGeneral ?? 'MEDIA']} {ficha.nivelConfianzaGeneral}</p>
+          <p style={{ color: 'var(--texto-secundario)', margin: '0.4rem 0 1rem' }}>
+            {ficha.sector} &middot; {ficha.pais} &middot; <ChipConfianza nivel={ficha.nivelConfianzaGeneral ?? 'MEDIA'} />
+          </p>
 
           <div style={{ display: 'flex', gap: '0.5rem', margin: '1rem 0' }}>
-            <button onClick={() => marcar('contactado')}>Marcar como contactado</button>
+            <button className="primario" onClick={() => marcar('contactado')}>Marcar como contactado</button>
             <button onClick={() => marcar('descartado')}>Descartar</button>
           </div>
 
@@ -106,28 +107,29 @@ export default function CargadoresPage() {
                 {Object.entries(ficha.atributos).map(([clave, dato]) => (
                   <li key={clave}>
                     <strong>{clave}:</strong> {dato.valor}{' '}
-                    <span title={`Fuente: ${dato.fuente.nombre} · Verificado: ${new Date(dato.fechaVerificacion).toLocaleString()}`}>
-                      {ICONO_CONFIANZA[dato.nivelConfianza]}
-                    </span>
+                    <ChipConfianza
+                      nivel={dato.nivelConfianza}
+                      titulo={`Fuente: ${dato.fuente.nombre} · Verificado: ${new Date(dato.fechaVerificacion).toLocaleString()}`}
+                    />
                   </li>
                 ))}
               </ul>
             </>
           )}
 
-          <h3>Comercio exterior</h3>
+          <h3 style={{ marginTop: '1rem' }}>Comercio exterior</h3>
           <ul>
             {ficha.registrosComercioExterior.map((r) => (
               <li key={r.id}>
                 {r.tipoOperacion}: {r.productoDescripcion} ({r.paisOrigen} → {r.paisDestino}){' '}
-                {ICONO_CONFIANZA[r.nivelConfianza]} <em>({r.fuente.nombre})</em>
+                <ChipConfianza nivel={r.nivelConfianza} /> <em>({r.fuente.nombre})</em>
               </li>
             ))}
           </ul>
 
           {ficha.contactos.length > 0 && (
             <>
-              <h3>Contactos</h3>
+              <h3 style={{ marginTop: '1rem' }}>Contactos</h3>
               <ul>
                 {ficha.contactos.map((c) => (
                   <li key={c.id}>{c.nombre} {c.cargo && `- ${c.cargo}`} {c.email}</li>
@@ -136,7 +138,7 @@ export default function CargadoresPage() {
             </>
           )}
 
-          <h3>Actividad reciente</h3>
+          <h3 style={{ marginTop: '1rem' }}>Actividad reciente</h3>
           <ul>
             {ficha.interaccionesRecientes.map((i) => (
               <li key={i.id}>

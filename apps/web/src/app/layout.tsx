@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Loges-BIAP",
   description: "Inteligencia Comercial y Logistica - Grupo Gammacargo",
+  icons: { icon: "/loges.png" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

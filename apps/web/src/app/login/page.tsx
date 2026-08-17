@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { login, ApiError } from '@/lib/api';
 import { guardarSesion } from '@/lib/session';
 
@@ -28,35 +29,47 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: 360, margin: '4rem auto', fontFamily: 'sans-serif' }}>
-      <h1>Loges-BIAP</h1>
-      <p>Inteligencia Comercial y Logistica &mdash; Grupo Gammacargo</p>
-      <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        <label>
-          Correo
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            style={{ width: '100%' }}
-          />
-        </label>
-        <label>
-          Contrasena
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            style={{ width: '100%' }}
-          />
-        </label>
-        {error && <p style={{ color: 'crimson' }}>{error}</p>}
-        <button type="submit" disabled={cargando}>
-          {cargando ? 'Ingresando...' : 'Ingresar'}
-        </button>
-      </form>
+    <main
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--loges-azul-marino)',
+      }}
+    >
+      <div className="card" style={{ width: 380, padding: '2.5rem' }}>
+        <Image src="/loges.png" alt="Loges" width={140} height={47} style={{ height: 36, width: 'auto', marginBottom: '1.25rem' }} priority />
+        <p style={{ color: 'var(--texto-secundario)', marginBottom: '1.5rem' }}>
+          Inteligencia Comercial y Logistica &mdash; Grupo Gammacargo
+        </p>
+        <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.9rem' }}>
+            Correo
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              style={{ width: '100%' }}
+            />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.9rem' }}>
+            Contrasena
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ width: '100%' }}
+            />
+          </label>
+          {error && <p style={{ color: 'var(--color-peligro)' }}>{error}</p>}
+          <button type="submit" className="primario" disabled={cargando} style={{ marginTop: '0.5rem' }}>
+            {cargando ? 'Ingresando...' : 'Ingresar'}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }

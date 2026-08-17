@@ -1,13 +1,23 @@
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Paleta de marca Loges-BIAP (Documento 001, seccion 1: modulo de Loges).
+     Azul marino de la referencia de diseno del cliente + verdes extraidos
+     del logo (apps/web/public/loges.png). */
+  --loges-azul-marino: #0f1e3d;
+  --loges-azul-marino-claro: #1a2f57;
+  --loges-verde-brillante: #49e43c;
+  --loges-verde-menta: #35dc9f;
+  --loges-verde-oscuro: #0f2c21;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #f5f6f8;
+  --surface: #ffffff;
+  --foreground: var(--loges-verde-oscuro);
+  --texto-secundario: #5b6472;
+  --borde: #e2e5ea;
+
+  --color-primario: var(--loges-verde-menta);
+  --color-primario-hover: #29c489;
+  --color-acento: var(--loges-verde-brillante);
+  --color-peligro: #d64545;
 }
 
 html {
@@ -26,7 +36,7 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -42,8 +52,99 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+h1, h2, h3 {
+  color: var(--loges-azul-marino);
 }
+
+/* --- Componentes reutilizables --- */
+
+button,
+.btn {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--borde);
+  background: var(--surface);
+  color: var(--foreground);
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+button:hover,
+.btn:hover {
+  border-color: var(--color-primario);
+}
+
+button.primario,
+.btn-primario {
+  background: var(--color-primario);
+  border-color: var(--color-primario);
+  color: #04261a;
+  font-weight: 600;
+}
+
+button.primario:hover,
+.btn-primario:hover {
+  background: var(--color-primario-hover);
+}
+
+input,
+select {
+  font: inherit;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--color-primario);
+}
+
+table {
+  background: var(--surface);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th {
+  background: var(--background);
+  color: var(--texto-secundario);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--borde);
+}
+
+td {
+  padding: 0.6rem 0.75rem;
+}
+
+tr:hover td {
+  background: #f0fdf7;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.chip-alta { background: #e6fbf3; color: #0f7a52; }
+.chip-media { background: #fff6e0; color: #9a6b00; }
+.chip-baja { background: #f0f1f3; color: var(--texto-secundario); }
