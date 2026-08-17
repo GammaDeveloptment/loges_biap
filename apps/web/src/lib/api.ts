@@ -1,5 +1,6 @@
 import type {
   ApiErrorBody,
+  AreaUsuario,
   LoginRequest,
   LoginResponse,
   NivelConfianza,
@@ -119,4 +120,36 @@ export interface EjecucionAgente {
 
 export function listarEjecucionesAgente(): Promise<EjecucionAgente[]> {
   return request<EjecucionAgente[]>('/ejecuciones-agente', {}, true);
+}
+
+// --- Documento 010, seccion 4.6 (Usuarios) ---
+
+export interface Usuario {
+  id: string;
+  nombre: string;
+  email: string;
+  area: AreaUsuario;
+  activo: boolean;
+}
+
+export interface CrearUsuarioInput {
+  nombre: string;
+  email: string;
+  password: string;
+  area: AreaUsuario;
+}
+
+export function listarUsuarios(): Promise<Usuario[]> {
+  return request<Usuario[]>('/usuarios', {}, true);
+}
+
+export function crearUsuario(input: CrearUsuarioInput): Promise<Usuario> {
+  return request<Usuario>('/usuarios', { method: 'POST', body: JSON.stringify(input) }, true);
+}
+
+export function actualizarUsuario(
+  id: string,
+  input: Partial<Pick<Usuario, 'area' | 'activo'>>,
+): Promise<Usuario> {
+  return request<Usuario>(`/usuarios/${id}`, { method: 'PATCH', body: JSON.stringify(input) }, true);
 }
