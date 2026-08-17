@@ -96,6 +96,7 @@ export class EmpresasService {
           fuente: { id: a.fuente.id, nombre: a.fuente.nombre, tipo: a.fuente.tipo },
           nivelConfianza: a.nivelConfianza,
           fechaVerificacion: a.fechaVerificacion,
+          pendienteReverificacion: a.pendienteReverificacion,
         },
       ]),
     );
@@ -122,11 +123,25 @@ export class EmpresasService {
   }
 
   async historial(id: string) {
+    // El historial de una empresa cubre tambien los cambios de sus
+    // atributos (empresa_atributo): estan registrados con su propio id como
+    // entidad_id (Documento 005, seccion 5), no con el id de la empresa -
+    // sin este join, cosas como la resolucion de un conflicto entre fuentes
+    // (Documento 009, seccion 5) quedarian invisibles en la ficha.
+    const idsAtributos = (
+      await this.prisma.empresaAtributo.findMany({ where: { empresaId: id }, select: { id: true } })
+    ).map((a) => a.id);
+
     // historial_cambio no esta scopeado por area (Documento 011, seccion 5:
     // sus politicas son de solo-insercion/solo-lectura, no por area) - no
     // necesita paraArea.
     return this.prisma.historialCambio.findMany({
-      where: { entidadTipo: 'empresa', entidadId: id },
+      where: {
+        OR: [
+          { entidadTipo: 'empresa', entidadId: id },
+          { entidadTipo: 'empresa_atributo', entidadId: { in: idsAtributos } },
+        ],
+      },
       orderBy: { fecha: 'desc' },
     });
   }

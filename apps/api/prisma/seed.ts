@@ -56,6 +56,31 @@ async function main() {
     });
     console.log('Fuente simulada creada para la Entrega 2.');
   }
+
+  // Segunda fuente sintetica INDEPENDIENTE (Entrega 4, Documento 009,
+  // seccion 5): con nivel_confianza_base mas bajo que la principal, para
+  // poder probar de verdad que un conflicto se resuelve a favor de la
+  // fuente mas confiable, no por azar.
+  const NOMBRE_FUENTE_SECUNDARIA = 'Fuente Simulada Secundaria - Registro Independiente (Documento 014, seccion 6)';
+  const fuenteSecundaria = await prisma.fuente.findFirst({
+    where: { nombre: NOMBRE_FUENTE_SECUNDARIA },
+  });
+  if (!fuenteSecundaria) {
+    await prisma.fuente.create({
+      data: {
+        nombre: NOMBRE_FUENTE_SECUNDARIA,
+        tipo: 'otro',
+        pais: 'N/A',
+        nivelConfianzaBase: 'BAJA',
+        terminosUsoVerificados: true,
+        activa: true,
+        aprobadoPor: 'Sistema (fuente simulada, no consulta datos reales de terceros)',
+        fechaAprobacionLegal: new Date(),
+        referenciaLegal: 'Documento 014, seccion 6 - no aplica evaluacion de 012-B a datos sinteticos',
+      },
+    });
+    console.log('Fuente simulada secundaria creada para la Entrega 4.');
+  }
 }
 
 main()

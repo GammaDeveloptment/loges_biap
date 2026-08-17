@@ -253,6 +253,10 @@ model EmpresaAtributo {
   ejecucionAgente   EjecucionAgente? @relation(fields: [ejecucionAgenteId], references: [id])
   fechaVerificacion DateTime  @default(now()) @map("fecha_verificacion")
   vigente           Boolean   @default(true)
+  // Documento 009, seccion 5: cuando dos fuentes discrepan, el valor de
+  // mayor nivel_confianza_base se mantiene vigente pero queda marcado como
+  // pendiente de reverificacion en vez de resolverse por adivinanza.
+  pendienteReverificacion Boolean @default(false) @map("pendiente_reverificacion")
 
   @@index([empresaId, atributo, vigente])
   @@map("empresa_atributo")

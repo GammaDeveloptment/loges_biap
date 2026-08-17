@@ -1,14 +1,30 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
+import type { NivelConfianza } from '@loges-biap/shared-types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConectorSimuladoCargadores } from '../../conectores/conector-simulado-cargadores';
 import type { CandidatoCargador } from '../../conectores/conector.interface';
+import { ConectorSimuladoCargadoresSecundario } from '../../conectores/conector-simulado-cargadores-secundario';
+import { PROVEEDOR_RAZONAMIENTO } from '../../razonamiento/razonamiento.module';
+import type { ProveedorRazonamiento } from '../../razonamiento/proveedor-razonamiento.interface';
+
+const ORDEN_CONFIANZA: NivelConfianza[] = ['BAJA', 'MEDIA', 'ALTA'];
+function subirUnEscalon(a: NivelConfianza, b: NivelConfianza): NivelConfianza {
+  const indice = Math.max(ORDEN_CONFIANZA.indexOf(a), ORDEN_CONFIANZA.indexOf(b));
+  return ORDEN_CONFIANZA[Math.min(indice + 1, ORDEN_CONFIANZA.length - 1)];
+}
+
+interface FuenteRef {
+  id: string;
+  nivelConfianzaBase: NivelConfianza;
+}
 
 // Documento 009, seccion 2.1 (descubrimiento_cargador) + seccion 3 (ciclo de
-// vida completo de una tarea). Usa el conector simulado (Documento 014,
-// seccion 6) mientras ninguna fuente real tenga aprobacion del Documento
-// 012-B - el resto de esta logica (estructurar, excluir, registrar
-// historial) es identica a como funcionara con un conector real.
+// vida completo de una tarea) + seccion 5 (verificacion cruzada, Entrega 4).
+// Usa conectores simulados (Documento 014, seccion 6) mientras ninguna
+// fuente real tenga aprobacion del Documento 012-B - el resto de esta
+// logica (estructurar, comparar, excluir, registrar historial) es identica
+// a como funcionara con conectores reales.
 @Injectable()
 export class DescubrimientoCargadoresHandler {
   private readonly logger = new Logger(DescubrimientoCargadoresHandler.name);
@@ -16,6 +32,8 @@ export class DescubrimientoCargadoresHandler {
   constructor(
     private readonly prisma: PrismaService,
     private readonly conector: ConectorSimuladoCargadores,
+    private readonly conectorSecundario: ConectorSimuladoCargadoresSecundario,
+    @Inject(PROVEEDOR_RAZONAMIENTO) private readonly razonamiento: ProveedorRazonamiento,
   ) {}
 
   async ejecutar(
@@ -27,17 +45,21 @@ export class DescubrimientoCargadoresHandler {
     const fuente = await this.prisma.fuente.findFirst({
       where: { nombre: this.conector.fuenteNombre, activa: true },
     });
-    if (!fuente) {
-      throw new Error(
-        `La fuente '${this.conector.fuenteNombre}' no existe o no esta activa - correr el seed (prisma/seed.ts).`,
-      );
+    const fuenteSecundaria = await this.prisma.fuente.findFirst({
+      where: { nombre: this.conectorSecundario.fuenteNombre, activa: true },
+    });
+    if (!fuente || !fuenteSecundaria) {
+      throw new Error('Alguna de las fuentes simuladas no existe o no esta activa - correr el seed (prisma/seed.ts).');
     }
 
     const respuesta = await this.conector.consultar(criterios);
+    const respuestaSecundaria = await this.conectorSecundario.consultar();
 
     let nuevos = 0;
     let excluidos = 0;
     let actualizados = 0;
+    let corroboraciones = 0;
+    let conflictos = 0;
 
     // El Motor de Agentes escribe como proceso de sistema, no como un
     // usuario humano con sesion abierta - 'direccion_general' es la unica
@@ -46,20 +68,35 @@ export class DescubrimientoCargadoresHandler {
     // PrismaService.paraArea).
     await this.prisma.paraArea('direccion_general', async (tx) => {
       for (const candidato of respuesta.candidatos) {
-        const resultado = await this.procesarCandidato(tx, candidato, fuente, ejecucionId);
+        const resultado = await this.procesarCandidatoPrimario(tx, candidato, fuente, ejecucionId);
         if (resultado === 'nuevo') nuevos++;
         else if (resultado === 'excluido') excluidos++;
         else actualizados++;
       }
-    });
 
-    return `Encontrados ${respuesta.candidatos.length} candidatos: ${nuevos} nuevos, ${actualizados} ya existentes, ${excluidos} excluidos (cliente actual o descartados, Documento 009 seccion 2.1).`;
+      for (const candidatoSecundario of respuestaSecundaria.candidatos) {
+        const resultado = await this.procesarCandidatoSecundario(
+          tx,
+          candidatoSecundario,
+          fuenteSecundaria,
+          ejecucionId,
+        );
+        if (resultado === 'corroborado') corroboraciones++;
+        else if (resultado === 'conflicto') conflictos++;
+      }
+    }, { timeoutMs: 60_000 });
+
+    return (
+      `Encontrados ${respuesta.candidatos.length} candidatos: ${nuevos} nuevos, ${actualizados} ya existentes, ` +
+      `${excluidos} excluidos (cliente actual o descartados, Documento 009 seccion 2.1). ` +
+      `Fuente secundaria: ${corroboraciones} datos corroborados (confianza elevada), ${conflictos} discrepancias reales (pendientes de reverificacion, Documento 009 seccion 5).`
+    );
   }
 
-  private async procesarCandidato(
+  private async procesarCandidatoPrimario(
     tx: Prisma.TransactionClient,
     candidato: CandidatoCargador,
-    fuente: { id: string; nivelConfianzaBase: 'ALTA' | 'MEDIA' | 'BAJA' },
+    fuente: FuenteRef,
     ejecucionId: string,
   ): Promise<'nuevo' | 'excluido' | 'actualizado'> {
     let empresa = candidato.identificadorFiscal
@@ -121,41 +158,8 @@ export class DescubrimientoCargadoresHandler {
       });
     }
 
-    // Documento 005, seccion 4: un atributo nuevo solo se inserta si el
-    // valor vigente cambio - si es identico, re-detectarlo en cada corrida
-    // no es un hallazgo nuevo, es el mismo dato. Evita duplicar filas cada
-    // vez que el conector (real o simulado) vuelve a reportar lo mismo.
     if (candidato.direccion) {
-      const atributoVigente = await tx.empresaAtributo.findFirst({
-        where: { empresaId: empresa.id, atributo: 'direccion', vigente: true },
-      });
-      if (!atributoVigente) {
-        await tx.empresaAtributo.create({
-          data: {
-            empresaId: empresa.id,
-            atributo: 'direccion',
-            valor: candidato.direccion,
-            fuenteId: fuente.id,
-            nivelConfianza: fuente.nivelConfianzaBase,
-            ejecucionAgenteId: ejecucionId,
-          },
-        });
-      } else if (atributoVigente.valor !== candidato.direccion) {
-        await tx.empresaAtributo.update({
-          where: { id: atributoVigente.id },
-          data: { vigente: false },
-        });
-        await tx.empresaAtributo.create({
-          data: {
-            empresaId: empresa.id,
-            atributo: 'direccion',
-            valor: candidato.direccion,
-            fuenteId: fuente.id,
-            nivelConfianza: fuente.nivelConfianzaBase,
-            ejecucionAgenteId: ejecucionId,
-          },
-        });
-      }
+      await this.reconciliarAtributo(tx, empresa.id, 'direccion', candidato.direccion, fuente, ejecucionId);
     }
 
     if (candidato.contacto) {
@@ -191,26 +195,136 @@ export class DescubrimientoCargadoresHandler {
         paisDestino: candidato.comercioExterior.paisDestino,
       },
     });
-    if (registroExistente) {
-      return esNueva ? 'nuevo' : 'actualizado';
+    if (!registroExistente) {
+      await tx.registroComercioExterior.create({
+        data: {
+          empresaId: empresa.id,
+          tipoOperacion: candidato.comercioExterior.tipoOperacion,
+          productoDescripcion: candidato.comercioExterior.productoDescripcion,
+          paisOrigen: candidato.comercioExterior.paisOrigen,
+          paisDestino: candidato.comercioExterior.paisDestino,
+          periodoInicio: new Date(),
+          periodoFin: new Date(),
+          fuenteId: fuente.id,
+          nivelConfianza: fuente.nivelConfianzaBase,
+          ejecucionAgenteId: ejecucionId,
+        },
+      });
     }
 
-    await tx.registroComercioExterior.create({
-      data: {
-        empresaId: empresa.id,
-        tipoOperacion: candidato.comercioExterior.tipoOperacion,
-        productoDescripcion: candidato.comercioExterior.productoDescripcion,
-        paisOrigen: candidato.comercioExterior.paisOrigen,
-        paisDestino: candidato.comercioExterior.paisDestino,
-        periodoInicio: new Date(),
-        periodoFin: new Date(),
-        fuenteId: fuente.id,
-        nivelConfianza: fuente.nivelConfianzaBase,
-        ejecucionAgenteId: ejecucionId,
-      },
+    return esNueva ? 'nuevo' : 'actualizado';
+  }
+
+  // Documento 009, seccion 3 (Estructuracion) + seccion 5 (Verificacion
+  // cruzada): esta fuente entrega texto libre, no un campo ya estructurado -
+  // primero se extrae con el Proveedor de Razonamiento, luego se reconcilia
+  // igual que cualquier otro atributo.
+  private async procesarCandidatoSecundario(
+    tx: Prisma.TransactionClient,
+    candidato: { identificadorFiscal: string; nombreLegal: string; descripcionLibre: string },
+    fuenteSecundaria: FuenteRef,
+    ejecucionId: string,
+  ): Promise<'nuevo' | 'actualizado' | 'corroborado' | 'conflicto' | 'sin_cambio'> {
+    const empresa = await tx.empresa.findFirst({ where: { identificadorFiscal: candidato.identificadorFiscal } });
+    if (!empresa) {
+      // La fuente secundaria menciona una empresa que el descubrimiento
+      // primario todavia no encontro en esta corrida - sin empresa base no
+      // hay a que atributo asociarlo (Documento 009, seccion 2.1 asume la
+      // empresa ya creada por la tarea de descubrimiento).
+      return 'sin_cambio';
+    }
+
+    const direccionExtraida = await this.razonamiento.extraerDireccion(candidato.descripcionLibre);
+    if (!direccionExtraida) {
+      return 'sin_cambio';
+    }
+
+    return this.reconciliarAtributo(tx, empresa.id, 'direccion', direccionExtraida, fuenteSecundaria, ejecucionId);
+  }
+
+  // Documento 009, seccion 5: nucleo de la verificacion cruzada. Si no hay
+  // valor vigente, se registra tal cual. Si el valor nuevo es identico al
+  // vigente, no es un hallazgo nuevo. Si difiere, el Proveedor de
+  // Razonamiento decide si es el mismo hecho redactado distinto
+  // (corrobora -> sube la confianza) o una discrepancia real (se conserva
+  // el valor de la fuente con mayor nivel_confianza_base, y se marca
+  // pendiente_reverificacion - nunca se promedia ni se adivina).
+  private async reconciliarAtributo(
+    tx: Prisma.TransactionClient,
+    empresaId: string,
+    atributo: string,
+    valorNuevo: string,
+    fuenteNueva: FuenteRef,
+    ejecucionId: string,
+  ): Promise<'nuevo' | 'actualizado' | 'corroborado' | 'conflicto' | 'sin_cambio'> {
+    const vigente = await tx.empresaAtributo.findFirst({
+      where: { empresaId, atributo, vigente: true },
     });
 
-    return esNueva ? 'nuevo' : 'actualizado';
+    if (!vigente) {
+      await tx.empresaAtributo.create({
+        data: {
+          empresaId,
+          atributo,
+          valor: valorNuevo,
+          fuenteId: fuenteNueva.id,
+          nivelConfianza: fuenteNueva.nivelConfianzaBase,
+          ejecucionAgenteId: ejecucionId,
+        },
+      });
+      return 'nuevo';
+    }
+
+    if (vigente.valor === valorNuevo) {
+      return 'sin_cambio';
+    }
+
+    const comparacion = await this.razonamiento.compararHechos(
+      vigente.valor,
+      valorNuevo,
+      `Campo '${atributo}' de una empresa de comercio exterior.`,
+    );
+
+    await this.registrarHistorial(tx, 'empresa_atributo', vigente.id, atributo, vigente.valor, valorNuevo, fuenteNueva.id, ejecucionId);
+
+    if (comparacion.esElMismoHecho) {
+      const nuevaConfianza = subirUnEscalon(vigente.nivelConfianza, fuenteNueva.nivelConfianzaBase);
+      await tx.empresaAtributo.update({
+        where: { id: vigente.id },
+        data: { nivelConfianza: nuevaConfianza, fechaVerificacion: new Date() },
+      });
+      this.logger.log(`Corroborado '${atributo}' de empresa ${empresaId}: ${comparacion.explicacion}`);
+      return 'corroborado';
+    }
+
+    // Discrepancia real: se conserva el valor de mayor nivel_confianza_base,
+    // sin importar cual fuente lo reporto originalmente, y se marca para
+    // revision - nunca se resuelve en silencio.
+    const fuenteVigenteEsMasConfiable =
+      ORDEN_CONFIANZA.indexOf(vigente.nivelConfianza) >= ORDEN_CONFIANZA.indexOf(fuenteNueva.nivelConfianzaBase);
+
+    if (fuenteVigenteEsMasConfiable) {
+      await tx.empresaAtributo.update({
+        where: { id: vigente.id },
+        data: { pendienteReverificacion: true },
+      });
+    } else {
+      await tx.empresaAtributo.update({ where: { id: vigente.id }, data: { vigente: false } });
+      await tx.empresaAtributo.create({
+        data: {
+          empresaId,
+          atributo,
+          valor: valorNuevo,
+          fuenteId: fuenteNueva.id,
+          nivelConfianza: fuenteNueva.nivelConfianzaBase,
+          ejecucionAgenteId: ejecucionId,
+          pendienteReverificacion: true,
+        },
+      });
+    }
+
+    this.logger.warn(`Discrepancia real en '${atributo}' de empresa ${empresaId}: ${comparacion.explicacion}`);
+    return 'conflicto';
   }
 
   private async registrarHistorial(

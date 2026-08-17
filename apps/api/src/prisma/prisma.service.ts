@@ -30,16 +30,25 @@ export class PrismaService
   // lectura/escritura de todo el contenido de negocio en las politicas del
   // Documento 011, seccion 3 - reutilizarla evita inventar un pseudo-area
   // "sistema" que las politicas tendrian que conocer aparte.
+  // `opciones.timeoutMs` sube el limite por defecto de Prisma (5s) cuando el
+  // callback incluye llamadas reales al Proveedor de Razonamiento (Documento
+  // 009/Entrega 4) - una respuesta de Anthropic puede tardar mas que eso, y
+  // la transaccion no debe expirar a mitad de una corrida con varios
+  // candidatos.
   async paraArea<T>(
     area: AreaUsuario,
     fn: (tx: Prisma.TransactionClient) => Promise<T>,
+    opciones?: { timeoutMs?: number },
   ): Promise<T> {
     if (!AREAS_USUARIO.includes(area)) {
       throw new Error(`Area invalida para RLS: '${area}'.`);
     }
-    return this.$transaction(async (tx) => {
-      await tx.$executeRawUnsafe(`SET LOCAL app.current_user_area = '${area}'`);
-      return fn(tx);
-    });
+    return this.$transaction(
+      async (tx) => {
+        await tx.$executeRawUnsafe(`SET LOCAL app.current_user_area = '${area}'`);
+        return fn(tx);
+      },
+      opciones?.timeoutMs ? { timeout: opciones.timeoutMs } : undefined,
+    );
   }
 }

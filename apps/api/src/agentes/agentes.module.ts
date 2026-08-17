@@ -7,11 +7,13 @@ import { DescubrimientoCargadoresHandler } from './handlers/descubrimiento-carga
 import { EnriquecimientoProveedoresHandler } from './handlers/enriquecimiento-proveedores.handler';
 import { MonitoreoCompetidoresHandler } from './handlers/monitoreo-competidores.handler';
 import { ConectorSimuladoCargadores } from '../conectores/conector-simulado-cargadores';
+import { ConectorSimuladoCargadoresSecundario } from '../conectores/conector-simulado-cargadores-secundario';
 import { ConectorSimuladoProveedores } from '../conectores/conector-simulado-proveedores';
 import { ConectorSimuladoCompetidores } from '../conectores/conector-simulado-competidores';
+import { RazonamientoModule } from '../razonamiento/razonamiento.module';
 
 @Module({
-  imports: [BullModule.registerQueue({ name: COLA_AGENTES })],
+  imports: [BullModule.registerQueue({ name: COLA_AGENTES }), RazonamientoModule],
   controllers: [AgentesController],
   providers: [
     AgentesService,
@@ -20,6 +22,7 @@ import { ConectorSimuladoCompetidores } from '../conectores/conector-simulado-co
     EnriquecimientoProveedoresHandler,
     MonitoreoCompetidoresHandler,
     ConectorSimuladoCargadores,
+    ConectorSimuladoCargadoresSecundario,
     ConectorSimuladoProveedores,
     ConectorSimuladoCompetidores,
   ],
