@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PhoneCall, Check, X } from 'lucide-react';
+import { PhoneCall, Check, X, Sparkles } from 'lucide-react';
 import {
   crearInteraccion,
+  dispararEjecucion,
+  esperarEjecucion,
   listarEmpresas,
   obtenerFichaEmpresa,
   type EmpresaResumen,
@@ -31,6 +33,32 @@ export default function ProveedoresPage() {
   const [empresas, setEmpresas] = useState<EmpresaResumen[]>([]);
   const [ficha, setFicha] = useState<FichaEmpresa | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [buscandoNuevos, setBuscandoNuevos] = useState(false);
+  const [mensaje, setMensaje] = useState<string | null>(null);
+
+  async function buscarCandidatosNuevos() {
+    setBuscandoNuevos(true);
+    setMensaje(null);
+    setError(null);
+    try {
+      const ejecucion = await dispararEjecucion('enriquecimiento_proveedor', {
+        tipoServicio: tipoServicio || undefined,
+      });
+      const resultado = await esperarEjecucion(ejecucion.id);
+      if (!resultado) {
+        setError('La busqueda esta tardando mas de lo esperado - revisa el Monitor de Agentes en Administracion.');
+      } else if (resultado.estado === 'fallido') {
+        setError(resultado.resultadoResumen ?? 'La busqueda fallo.');
+      } else {
+        setMensaje(resultado.resultadoResumen);
+      }
+      await buscar();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo disparar la busqueda.');
+    } finally {
+      setBuscandoNuevos(false);
+    }
+  }
 
   async function buscar() {
     try {
@@ -77,6 +105,7 @@ export default function ProveedoresPage() {
       </div>
 
       {error && <p style={{ color: 'var(--color-peligro)' }}>{error}</p>}
+      {mensaje && <p style={{ color: 'var(--texto-secundario)' }}>{mensaje}</p>}
 
       <div className="diseno-lista-detalle">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espacio-4)' }}>
@@ -87,6 +116,13 @@ export default function ProveedoresPage() {
                 <option key={r} value={r}>{ETIQUETA_ROL[r]}</option>
               ))}
             </select>
+            <IconButton
+              icono={Sparkles}
+              etiqueta={buscandoNuevos ? 'Buscando proveedores nuevos...' : 'Buscar proveedores nuevos con el Motor de Agentes'}
+              variante="primario"
+              onClick={buscarCandidatosNuevos}
+              disabled={buscandoNuevos}
+            />
           </div>
 
           <div className="contenedor-tabla">

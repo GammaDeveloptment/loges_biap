@@ -1,7 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { listarEmpresas, obtenerFichaEmpresa, type EmpresaResumen, type FichaEmpresa } from '@/lib/api';
+import { Sparkles } from 'lucide-react';
+import {
+  dispararEjecucion,
+  esperarEjecucion,
+  listarEmpresas,
+  obtenerFichaEmpresa,
+  type EmpresaResumen,
+  type FichaEmpresa,
+} from '@/lib/api';
+import { IconButton } from '@/components/IconButton';
 
 // Documento 003, modulo 3.2 - Entrega 3, con conector simulado (Documento
 // 014, seccion 6) mientras el Documento 012-B no apruebe una fuente real.
@@ -9,6 +18,8 @@ export default function CompetidoresPage() {
   const [empresas, setEmpresas] = useState<EmpresaResumen[]>([]);
   const [ficha, setFicha] = useState<FichaEmpresa | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [buscandoNuevos, setBuscandoNuevos] = useState(false);
+  const [mensaje, setMensaje] = useState<string | null>(null);
 
   async function buscar() {
     try {
@@ -23,6 +34,28 @@ export default function CompetidoresPage() {
   useEffect(() => {
     buscar();
   }, []);
+
+  async function monitorearCompetidores() {
+    setBuscandoNuevos(true);
+    setMensaje(null);
+    setError(null);
+    try {
+      const ejecucion = await dispararEjecucion('monitoreo_competidor', {});
+      const resultado = await esperarEjecucion(ejecucion.id);
+      if (!resultado) {
+        setError('El monitoreo esta tardando mas de lo esperado - revisa el Monitor de Agentes en Administracion.');
+      } else if (resultado.estado === 'fallido') {
+        setError(resultado.resultadoResumen ?? 'El monitoreo fallo.');
+      } else {
+        setMensaje(resultado.resultadoResumen);
+      }
+      await buscar();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo disparar el monitoreo.');
+    } finally {
+      setBuscandoNuevos(false);
+    }
+  }
 
   async function abrirFicha(id: string) {
     try {
@@ -42,6 +75,17 @@ export default function CompetidoresPage() {
       </div>
 
       {error && <p style={{ color: 'var(--color-peligro)' }}>{error}</p>}
+      {mensaje && <p style={{ color: 'var(--texto-secundario)' }}>{mensaje}</p>}
+
+      <div className="barra-herramientas">
+        <IconButton
+          icono={Sparkles}
+          etiqueta={buscandoNuevos ? 'Monitoreando competidores...' : 'Monitorear competidores con el Motor de Agentes'}
+          variante="primario"
+          onClick={monitorearCompetidores}
+          disabled={buscandoNuevos}
+        />
+      </div>
 
       <div className="diseno-lista-detalle">
         <div className="contenedor-tabla">

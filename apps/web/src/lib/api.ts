@@ -122,6 +122,35 @@ export function listarEjecucionesAgente(): Promise<EjecucionAgente[]> {
   return request<EjecucionAgente[]>('/ejecuciones-agente', {}, true);
 }
 
+export function dispararEjecucion(
+  tipoTarea: string,
+  criterios: Record<string, unknown> = {},
+): Promise<EjecucionAgente> {
+  return request<EjecucionAgente>(
+    '/ejecuciones-agente',
+    { method: 'POST', body: JSON.stringify({ tipoTarea, criterios }) },
+    true,
+  );
+}
+
+// Documento 009, seccion 4: la tarea corre en segundo plano (cola de
+// BullMQ) - esto espera a que termine, consultando el listado cada segundo,
+// para poder refrescar la pantalla y mostrar el resultado.
+export async function esperarEjecucion(
+  id: string,
+  { intervaloMs = 1200, maxIntentos = 30 }: { intervaloMs?: number; maxIntentos?: number } = {},
+): Promise<EjecucionAgente | null> {
+  for (let intento = 0; intento < maxIntentos; intento++) {
+    const ejecuciones = await listarEjecucionesAgente();
+    const encontrada = ejecuciones.find((e) => e.id === id);
+    if (encontrada && (encontrada.estado === 'completado' || encontrada.estado === 'fallido')) {
+      return encontrada;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervaloMs));
+  }
+  return null;
+}
+
 // --- Documento 010, seccion 4.6 (Usuarios) ---
 
 export interface Usuario {

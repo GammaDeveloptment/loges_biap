@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Search, PhoneCall, X } from 'lucide-react';
+import { Search, PhoneCall, X, Sparkles } from 'lucide-react';
 import {
   crearInteraccion,
+  dispararEjecucion,
+  esperarEjecucion,
   listarEmpresas,
   obtenerFichaEmpresa,
   type EmpresaResumen,
@@ -21,6 +23,33 @@ export default function CargadoresPage() {
   const [empresas, setEmpresas] = useState<EmpresaResumen[]>([]);
   const [ficha, setFicha] = useState<FichaEmpresa | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [buscandoNuevos, setBuscandoNuevos] = useState(false);
+  const [mensaje, setMensaje] = useState<string | null>(null);
+
+  async function buscarCandidatosNuevos() {
+    setBuscandoNuevos(true);
+    setMensaje(null);
+    setError(null);
+    try {
+      const ejecucion = await dispararEjecucion('descubrimiento_cargador', {
+        sector: sector || undefined,
+        pais: pais || undefined,
+      });
+      const resultado = await esperarEjecucion(ejecucion.id);
+      if (!resultado) {
+        setError('La busqueda esta tardando mas de lo esperado - revisa el Monitor de Agentes en Administracion.');
+      } else if (resultado.estado === 'fallido') {
+        setError(resultado.resultadoResumen ?? 'La busqueda fallo.');
+      } else {
+        setMensaje(resultado.resultadoResumen);
+      }
+      await buscar();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo disparar la busqueda.');
+    } finally {
+      setBuscandoNuevos(false);
+    }
+  }
 
   async function buscar() {
     try {
@@ -60,19 +89,27 @@ export default function CargadoresPage() {
     <div className="pagina">
       <div className="encabezado-pagina">
         <div>
-          <h1>Cargadores</h1>
-          <p>Empresas candidatas detectadas por el Motor de Agentes (Documento 003, modulo 3.1).</p>
+          <h1>Clientes Potenciales</h1>
+          <p>Empresas candidatas (cargadores) detectadas por el Motor de Agentes (Documento 003, modulo 3.1).</p>
         </div>
       </div>
 
       {error && <p style={{ color: 'var(--color-peligro)' }}>{error}</p>}
+      {mensaje && <p style={{ color: 'var(--texto-secundario)' }}>{mensaje}</p>}
 
       <div className="diseno-lista-detalle">
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--espacio-4)' }}>
           <div className="barra-herramientas">
             <input placeholder="Sector" value={sector} onChange={(e) => setSector(e.target.value)} />
             <input placeholder="Pais (ISO)" value={pais} onChange={(e) => setPais(e.target.value)} style={{ width: 90 }} />
-            <IconButton icono={Search} etiqueta="Buscar" variante="primario" onClick={buscar} />
+            <IconButton icono={Search} etiqueta="Buscar en lo ya descubierto" onClick={buscar} />
+            <IconButton
+              icono={Sparkles}
+              etiqueta={buscandoNuevos ? 'Buscando candidatos nuevos (puede tardar unos segundos, usa IA real)...' : 'Buscar candidatos nuevos con el Motor de Agentes'}
+              variante="primario"
+              onClick={buscarCandidatosNuevos}
+              disabled={buscandoNuevos}
+            />
           </div>
 
           <div className="contenedor-tabla">

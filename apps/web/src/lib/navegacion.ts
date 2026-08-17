@@ -26,8 +26,12 @@ export const NAVEGACION: ItemNavegacion[] = [
     ],
   },
   {
+    // Etiqueta en pantalla: "Clientes Potenciales" - mas clara para quien no
+    // conoce el termino de la industria. El concepto tecnico interno
+    // (base de datos, documentos, codigo) sigue siendo "cargador", a
+    // proposito (Documento 001) - este es un cambio solo de rotulo.
     href: '/cargadores',
-    etiqueta: 'Cargadores',
+    etiqueta: 'Clientes Potenciales',
     areas: ['comercial', 'direccion_general'],
   },
   {
