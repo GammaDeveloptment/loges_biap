@@ -1,5 +1,6 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ApiException } from '../common/api-exception';
 import { CrearFuenteDto } from './dto/crear-fuente.dto';
 import { ActualizarFuenteDto } from './dto/actualizar-fuente.dto';
 
@@ -26,7 +27,11 @@ export class FuentesService {
   async actualizar(id: string, dto: ActualizarFuenteDto) {
     const fuente = await this.prisma.fuente.findUnique({ where: { id } });
     if (!fuente) {
-      throw new NotFoundException('No existe una fuente con el id solicitado.');
+      throw new ApiException(
+        'FUENTE_NO_ENCONTRADA',
+        'No existe una fuente con el id solicitado.',
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     const terminosVerificados = dto.terminosUsoVerificados ?? fuente.terminosUsoVerificados;
@@ -36,8 +41,10 @@ export class FuentesService {
     // se activa sin terminos_uso_verificados = true. No basta con avisarlo
     // en la UI - el backend debe rechazarlo aunque alguien lo intente igual.
     if (seActivara && !terminosVerificados) {
-      throw new BadRequestException(
+      throw new ApiException(
+        'FUENTE_TERMINOS_NO_VERIFICADOS',
         'No se puede activar una fuente sin terminos_uso_verificados = true (Documento 012, seccion 4; Documento 012-B).',
+        HttpStatus.BAD_REQUEST,
       );
     }
 

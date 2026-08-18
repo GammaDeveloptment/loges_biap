@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ErrorApiFilter } from './common/filters/error-api.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -15,6 +16,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // Documento 010, seccion 5: formato de error unico en toda la API.
+  app.useGlobalFilters(new ErrorApiFilter());
 
   // El frontend (Next.js) es el unico origen esperado en esta fase - vive
   // fuera de la red de Gammacargo (Documento 013, seccion 2).

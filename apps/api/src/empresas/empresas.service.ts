@@ -1,11 +1,23 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, HttpStatus, Injectable } from '@nestjs/common';
 import type { AreaUsuario } from '@loges-biap/shared-types';
 import { PrismaService } from '../prisma/prisma.service';
+import { ApiException } from '../common/api-exception';
 import { ListarEmpresasDto } from './dto/listar-empresas.dto';
 import { CrearInteraccionDto } from './dto/crear-interaccion.dto';
 import { rolesPermitidos } from './permisos-empresas';
 
-const TAMANO_PAGINA = 50;
+const TAMANO_PAGINA_DEFECTO = 50;
+const TAMANO_PAGINA_MAXIMO = 100;
+
+function empresaNoEncontrada(): ApiException {
+  // Documento 010, seccion 5: es el ejemplo textual del propio documento -
+  // mismo codigo, para que quede real y no solo ilustrativo.
+  return new ApiException(
+    'EMPRESA_NO_ENCONTRADA',
+    'No existe una empresa con el id solicitado.',
+    HttpStatus.NOT_FOUND,
+  );
+}
 
 @Injectable()
 export class EmpresasService {
@@ -30,6 +42,10 @@ export class EmpresasService {
     }
 
     const rolesAConsultar = filtro.rol ? [filtro.rol] : permitidos;
+    // Documento 010, seccion 6: `limite` es configurable por el consumidor,
+    // pero acotado - un CRM/ERP pidiendo un `limite` enorme no debe poder
+    // forzar un table scan completo de empresas.
+    const tamanoPagina = Math.min(filtro.limite ?? TAMANO_PAGINA_DEFECTO, TAMANO_PAGINA_MAXIMO);
 
     return this.prisma.paraArea(area, async (tx) => {
       const empresas = await tx.empresa.findMany({
@@ -42,12 +58,12 @@ export class EmpresasService {
         },
         include: { roles: { where: { vigente: true } } },
         orderBy: { fechaDescubrimiento: 'desc' },
-        take: TAMANO_PAGINA + 1,
+        take: tamanoPagina + 1,
         ...(filtro.cursor ? { cursor: { id: filtro.cursor }, skip: 1 } : {}),
       });
 
-      const hayMas = empresas.length > TAMANO_PAGINA;
-      const pagina = hayMas ? empresas.slice(0, TAMANO_PAGINA) : empresas;
+      const hayMas = empresas.length > tamanoPagina;
+      const pagina = hayMas ? empresas.slice(0, tamanoPagina) : empresas;
 
       return {
         datos: pagina,
@@ -76,7 +92,7 @@ export class EmpresasService {
     );
 
     if (!empresa) {
-      throw new NotFoundException('No existe una empresa con el id solicitado.');
+      throw empresaNoEncontrada();
     }
 
     const tieneRolVisible = empresa.roles.some((r) => permitidos.includes(r.rol));
@@ -161,7 +177,7 @@ export class EmpresasService {
         include: { proveedorPerfil: true },
       });
       if (!empresa) {
-        throw new NotFoundException('No existe una empresa con el id solicitado.');
+        throw empresaNoEncontrada();
       }
 
       const interaccion = await tx.interaccionUsuario.create({
@@ -206,7 +222,11 @@ export class EmpresasService {
     return this.prisma.paraArea(area, async (tx) => {
       const perfil = await tx.competidorPerfil.findUnique({ where: { empresaId } });
       if (!perfil) {
-        throw new NotFoundException('Esta empresa no tiene perfil de competidor.');
+        throw new ApiException(
+          'EMPRESA_SIN_PERFIL_COMPETIDOR',
+          'Esta empresa no tiene perfil de competidor.',
+          HttpStatus.NOT_FOUND,
+        );
       }
       return tx.competidorCambio.findMany({
         where: { competidorPerfilId: perfil.id },
