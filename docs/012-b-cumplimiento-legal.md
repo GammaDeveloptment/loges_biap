@@ -1,7 +1,7 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.7
+**Versión:** 0.8
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -73,6 +73,7 @@ Cada fuente evaluada se documenta con esta estructura (una fila = una fuente can
 - Ninguna fuente se marca `terminos_uso_verificados = true` (Documento 005) sin que exista una fila completa de la plantilla de la sección 4, con responsable y referencia identificados.
 - El responsable de aprobar una fuente **debe ser una persona designada por Gammacargo con respaldo de asesoría legal**, nunca el equipo de desarrollo por su cuenta — el equipo de desarrollo implementa el conector (Documento 012) una vez que la fuente ya fue aprobada, no antes ni en paralelo.
 - Se recomienda extender el esquema de `fuente` (Documento 005) con tres campos de soporte a esta gobernanza: `aprobado_por`, `fecha_aprobacion_legal`, `referencia_legal` — de forma que la aprobación quede trazable en el mismo dato, igual que se exige trazabilidad para cualquier otro hecho del sistema (Documento 005, sección 4).
+- **Persona designada (agosto 2026): Ricardo Ortega Silva.** El cliente (Ronald Cespedes) confirmó este nombre como el responsable de ejecutar la evaluación legal real de este documento. Esto resuelve el "quién" de la gobernanza — sigue pendiente que Ricardo Ortega Silva complete al menos una fila "Aprobada" de la plantilla de la sección 4 para que la Entrega 2 del Documento 007 pueda pasar de datos sintéticos a una fuente real; el nombramiento en sí no constituye una aprobación de fuente.
 
 ## 7. Relación con los Siguientes Documentos
 
