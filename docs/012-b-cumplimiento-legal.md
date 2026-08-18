@@ -1,7 +1,7 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.5
+**Versión:** 0.6
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -127,6 +127,16 @@ Se evaluó si alguna herramienta oficial de estas plataformas (no scraping) podr
 - No se encontró evidencia de que Perú esté en la lista de territorios restringidos de Google, pero esto no se verificó de forma directa contra la lista oficial completa — pendiente de confirmar antes de asumirlo.
 
 **Implicación de arquitectura, no solo legal:** esta restricción de almacenamiento es incompatible con el patrón de dato trazable persistente que usa el resto de Loges-BIAP (Documento 005 — `empresa_atributo` con nivel de confianza e historial de cambios, guardado una sola vez). Si se usa Google Places para el dato de contacto, tendría que manejarse como una **consulta en vivo bajo demanda** (y su costo asociado cada vez) al abrir la ficha de una empresa, no como un campo más guardado y versionado igual que los demás — una decisión de producto y costo a tomar explícitamente, no un simple "agregar otra fuente" al patrón ya existente.
+
+### E. Bases de datos comerciales privadas de contacto — investigadas como alternativa a la consulta en vivo, con un hallazgo estructural relevante (agosto 2026)
+
+Se evaluó si algún proveedor privado de datos B2B permite licenciar (y por tanto almacenar de forma persistente, a diferencia de Google Places) datos de contacto de empresas peruanas:
+
+- **Kompass Perú, Dun & Bradstreet/CIAL Perú, Cámara de Comercio de Lima:** los tres son proveedores legítimos y verificables, y sí venden/dan acceso a datos de contacto bajo licencia comercial normal (a diferencia de Google Places, sin la restricción de "solo consulta en vivo"). **Pero los tres dependen de que la empresa esté formalmente registrada/afiliada** (Kompass por registro propio, D&B por cobertura de empresas medianas/grandes — sus clientes de referencia son Uber, H&M, Ferrero —, la CCL exige afiliación formal). Ninguno tiene cobertura confirmada de comercio informal tipo puesto de barrio.
+- **Dos proveedores "económicos" encontrados (uno peruano, uno chileno) declaran explícitamente que obtienen sus datos de "redes sociales, foros y portales online"** sin mencionar autorización de esas fuentes — esto es scraping no autorizado revendido como producto de datos, **no una alternativa limpia**, debe descartarse igual que cualquier scraping directo.
+- **Directorio MIPYME de PRODUCE** (dataset abierto del gobierno): mismo problema que el Padrón RUC — sin teléfono/email, y solo cubre empresas con RUC formal.
+
+**Hallazgo estructural, el más relevante de esta ronda de investigación:** según cifras citadas (Business Empresarial, referenciando datos oficiales), **el 86.3% de las MYPE en Perú operan de forma informal**. Como todas las fuentes legítimas investigadas (Padrón RUC, Kompass, D&B, CCL, PRODUCE) dependen en algún grado de registro/afiliación formal, existe una **limitación estructural, no solo de herramienta**: una parte significativa del comerciante realmente informal (el "repuestero de barrio sin RUC siquiera") probablemente no aparece en ninguna fuente legítima disponible, sin importar cuál se elija o apruebe. Esto debe comunicarse como expectativa realista al negocio, no como un problema técnico pendiente de resolver con más investigación — el Documento 012 (§1) ya excluye por diseño cualquier método que sí podría alcanzar a ese segmento (scraping, rastreo no autorizado).
 
 ---
 
