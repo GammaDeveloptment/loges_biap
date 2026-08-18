@@ -2,11 +2,10 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import type { Prisma } from '@prisma/client';
-import type { AreaUsuario } from '@loges-biap/shared-types';
+import { puedeDispararTarea, type AreaUsuario } from '@loges-biap/shared-types';
 import { PrismaService } from '../prisma/prisma.service';
 import { CrearEjecucionDto } from './dto/crear-ejecucion.dto';
 import { ListarEjecucionesDto } from './dto/listar-ejecuciones.dto';
-import { puedeDispararTarea } from './permisos-disparo-manual';
 
 export const COLA_AGENTES = 'agentes';
 

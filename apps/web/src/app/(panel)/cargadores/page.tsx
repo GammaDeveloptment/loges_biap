@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Search, PhoneCall, X, Sparkles } from 'lucide-react';
+import { puedeDispararTarea } from '@loges-biap/shared-types';
 import {
   crearInteraccion,
   dispararEjecucion,
@@ -13,6 +14,7 @@ import {
 } from '@/lib/api';
 import { ChipConfianza } from '@/components/ChipConfianza';
 import { IconButton } from '@/components/IconButton';
+import { obtenerSesion } from '@/lib/session';
 
 // Documento 006, secciones 4.1 (busqueda) y 4.2 (ficha de empresa) - Entrega
 // 2, con datos del conector simulado (Documento 014, seccion 6) mientras
@@ -25,6 +27,19 @@ export default function CargadoresPage() {
   const [error, setError] = useState<string | null>(null);
   const [buscandoNuevos, setBuscandoNuevos] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
+
+  // Documento 011, seccion 3: solo Comercial puede disparar esta tarea -
+  // antes el boton se mostraba habilitado para cualquier area que pudiera
+  // ver Cargadores (ej. Direccion General), y el 403 del backend se veia
+  // como error generico en vez de explicar por que (encontrado probando en
+  // navegador, Entrega 5). useState+useEffect (no leer localStorage directo
+  // en el render) para no romper la hidratacion, mismo patron que layout.tsx.
+  const [autorizadoParaDisparar, setAutorizadoParaDisparar] = useState(false);
+
+  useEffect(() => {
+    const sesion = obtenerSesion();
+    setAutorizadoParaDisparar(!!sesion && puedeDispararTarea(sesion.usuario.area, 'descubrimiento_cargador'));
+  }, []);
 
   async function buscarCandidatosNuevos() {
     setBuscandoNuevos(true);
@@ -105,10 +120,16 @@ export default function CargadoresPage() {
             <IconButton icono={Search} etiqueta="Buscar en lo ya descubierto" onClick={buscar} />
             <IconButton
               icono={Sparkles}
-              etiqueta={buscandoNuevos ? 'Buscando candidatos nuevos (puede tardar unos segundos, usa IA real)...' : 'Buscar candidatos nuevos con el Motor de Agentes'}
+              etiqueta={
+                !autorizadoParaDisparar
+                  ? 'Solo el area Comercial puede disparar esta busqueda (Documento 011, seccion 3)'
+                  : buscandoNuevos
+                    ? 'Buscando candidatos nuevos (puede tardar unos segundos, usa IA real)...'
+                    : 'Buscar candidatos nuevos con el Motor de Agentes'
+              }
               variante="primario"
               onClick={buscarCandidatosNuevos}
-              disabled={buscandoNuevos}
+              disabled={buscandoNuevos || !autorizadoParaDisparar}
             />
           </div>
 

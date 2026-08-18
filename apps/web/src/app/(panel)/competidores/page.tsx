@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Sparkles } from 'lucide-react';
+import { puedeDispararTarea } from '@loges-biap/shared-types';
 import {
   dispararEjecucion,
   esperarEjecucion,
@@ -11,6 +12,7 @@ import {
   type FichaEmpresa,
 } from '@/lib/api';
 import { IconButton } from '@/components/IconButton';
+import { obtenerSesion } from '@/lib/session';
 
 // Documento 003, modulo 3.2 - Entrega 3, con conector simulado (Documento
 // 014, seccion 6) mientras el Documento 012-B no apruebe una fuente real.
@@ -20,6 +22,15 @@ export default function CompetidoresPage() {
   const [error, setError] = useState<string | null>(null);
   const [buscandoNuevos, setBuscandoNuevos] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
+
+  // Documento 011, seccion 3: solo Gerencia Comercial puede disparar esta
+  // tarea - ver la misma correccion en cargadores/page.tsx (Entrega 5).
+  const [autorizadoParaDisparar, setAutorizadoParaDisparar] = useState(false);
+
+  useEffect(() => {
+    const sesion = obtenerSesion();
+    setAutorizadoParaDisparar(!!sesion && puedeDispararTarea(sesion.usuario.area, 'monitoreo_competidor'));
+  }, []);
 
   async function buscar() {
     try {
@@ -80,10 +91,16 @@ export default function CompetidoresPage() {
       <div className="barra-herramientas">
         <IconButton
           icono={Sparkles}
-          etiqueta={buscandoNuevos ? 'Monitoreando competidores...' : 'Monitorear competidores con el Motor de Agentes'}
+          etiqueta={
+            !autorizadoParaDisparar
+              ? 'Solo el area Gerencia Comercial puede disparar este monitoreo (Documento 011, seccion 3)'
+              : buscandoNuevos
+                ? 'Monitoreando competidores...'
+                : 'Monitorear competidores con el Motor de Agentes'
+          }
           variante="primario"
           onClick={monitorearCompetidores}
-          disabled={buscandoNuevos}
+          disabled={buscandoNuevos || !autorizadoParaDisparar}
         />
       </div>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { PhoneCall, Check, X, Sparkles } from 'lucide-react';
+import { puedeDispararTarea } from '@loges-biap/shared-types';
 import {
   crearInteraccion,
   dispararEjecucion,
@@ -12,6 +13,7 @@ import {
   type FichaEmpresa,
 } from '@/lib/api';
 import { IconButton } from '@/components/IconButton';
+import { obtenerSesion } from '@/lib/session';
 
 const ROLES_PROVEEDOR = ['proveedor_transportista', 'proveedor_aduanal', 'proveedor_bodega'];
 const ETIQUETA_ROL: Record<string, string> = {
@@ -35,6 +37,15 @@ export default function ProveedoresPage() {
   const [error, setError] = useState<string | null>(null);
   const [buscandoNuevos, setBuscandoNuevos] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
+
+  // Documento 011, seccion 3: solo Operaciones/Compras puede disparar esta
+  // tarea - ver la misma correccion en cargadores/page.tsx (Entrega 5).
+  const [autorizadoParaDisparar, setAutorizadoParaDisparar] = useState(false);
+
+  useEffect(() => {
+    const sesion = obtenerSesion();
+    setAutorizadoParaDisparar(!!sesion && puedeDispararTarea(sesion.usuario.area, 'enriquecimiento_proveedor'));
+  }, []);
 
   async function buscarCandidatosNuevos() {
     setBuscandoNuevos(true);
@@ -118,10 +129,16 @@ export default function ProveedoresPage() {
             </select>
             <IconButton
               icono={Sparkles}
-              etiqueta={buscandoNuevos ? 'Buscando proveedores nuevos...' : 'Buscar proveedores nuevos con el Motor de Agentes'}
+              etiqueta={
+                !autorizadoParaDisparar
+                  ? 'Solo el area Operaciones/Compras puede disparar esta busqueda (Documento 011, seccion 3)'
+                  : buscandoNuevos
+                    ? 'Buscando proveedores nuevos...'
+                    : 'Buscar proveedores nuevos con el Motor de Agentes'
+              }
               variante="primario"
               onClick={buscarCandidatosNuevos}
-              disabled={buscandoNuevos}
+              disabled={buscandoNuevos || !autorizadoParaDisparar}
             />
           </div>
 
