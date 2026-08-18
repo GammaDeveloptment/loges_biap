@@ -1,7 +1,7 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.4
+**Versión:** 0.5
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -114,6 +114,19 @@ Se evaluó si alguna herramienta oficial de estas plataformas (no scraping) podr
 - **Herramientas de audiencia/insights** (TikTok Creative Center, sucesoras de Meta Audience Insights): dan solo datos demográficos/de tendencia agregados, nunca nombres de negocios específicos.
 
 **Conclusión de esta investigación:** no existe hoy una vía de redes sociales, oficial y dentro de términos de servicio, comparable en utilidad al Padrón RUC de la Categoría A. Cualquier herramienta que sí "buscara" negocios en estas plataformas por palabra clave implicaría scraping no autorizado por sus términos de uso — fuera del alcance de este proyecto (`CLAUDE.md`: *"no hacemos scraping, no hacemos crawling"*).
+
+### D. Campos reales del Padrón RUC, y Google Places API como posible complemento para el dato de contacto (agosto 2026)
+
+**Confirmado — el Padrón RUC/consulta pública de SUNAT no expone teléfono ni email.** Campos verificados: RUC, razón social/nombre comercial, tipo de contribuyente, estado, condición de domicilio, fecha de inicio de actividades, actividad(es) económica(s) (CIIU), y domicilio fiscal completo (tipo/nombre de vía, número, ubigeo). Datos más completos (representante legal, etc.) requieren autenticación del propio contribuyente con Clave SOL — no accesibles para terceros. Esto confirma que esta fuente da **nombre + dirección física**, no un canal de contacto directo.
+
+**Google Places API (Google Maps Platform)** se investigó como posible complemento para el dato de contacto, ya que sí es un producto comercial oficial (no scraping) diseñado explícitamente para buscar negocios por categoría + ubicación:
+
+- **Sí existen** endpoints de búsqueda por palabra clave/categoría + ubicación (Nearby Search, Text Search) que devuelven nombre, dirección, teléfono, sitio web, categoría y horario — según el campo solicitado.
+- **De pago, por nivel de campo:** dirección es el nivel más económico ("Essentials"); nombre/categoría es un nivel intermedio ("Pro"); **teléfono, sitio web, horario y rating están en el nivel más caro ("Enterprise")**. Nivel gratuito mensual limitado (aprox. 1,000 llamadas/mes para campos Enterprise, cifra de fuente secundaria no verificada contra la página oficial de precios).
+- **Restricción crítica de almacenamiento, confirmada en la política oficial vigente:** *"no debes pre-cachear, cachear ni almacenar contenido de Places API"* más allá de excepciones puntuales — el `place_id` se puede guardar indefinidamente, las coordenadas hasta 30 días. **Todo lo demás (nombre, dirección, teléfono, rating) debe consultarse en vivo cada vez, no guardarse de forma permanente.**
+- No se encontró evidencia de que Perú esté en la lista de territorios restringidos de Google, pero esto no se verificó de forma directa contra la lista oficial completa — pendiente de confirmar antes de asumirlo.
+
+**Implicación de arquitectura, no solo legal:** esta restricción de almacenamiento es incompatible con el patrón de dato trazable persistente que usa el resto de Loges-BIAP (Documento 005 — `empresa_atributo` con nivel de confianza e historial de cambios, guardado una sola vez). Si se usa Google Places para el dato de contacto, tendría que manejarse como una **consulta en vivo bajo demanda** (y su costo asociado cada vez) al abrir la ficha de una empresa, no como un campo más guardado y versionado igual que los demás — una decisión de producto y costo a tomar explícitamente, no un simple "agregar otra fuente" al patrón ya existente.
 
 ---
 
