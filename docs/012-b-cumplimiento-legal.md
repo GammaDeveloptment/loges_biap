@@ -1,7 +1,7 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.6
+**Versión:** 0.7
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -137,6 +137,14 @@ Se evaluó si algún proveedor privado de datos B2B permite licenciar (y por tan
 - **Directorio MIPYME de PRODUCE** (dataset abierto del gobierno): mismo problema que el Padrón RUC — sin teléfono/email, y solo cubre empresas con RUC formal.
 
 **Hallazgo estructural, el más relevante de esta ronda de investigación:** según cifras citadas (Business Empresarial, referenciando datos oficiales), **el 86.3% de las MYPE en Perú operan de forma informal**. Como todas las fuentes legítimas investigadas (Padrón RUC, Kompass, D&B, CCL, PRODUCE) dependen en algún grado de registro/afiliación formal, existe una **limitación estructural, no solo de herramienta**: una parte significativa del comerciante realmente informal (el "repuestero de barrio sin RUC siquiera") probablemente no aparece en ninguna fuente legítima disponible, sin importar cuál se elija o apruebe. Esto debe comunicarse como expectativa realista al negocio, no como un problema técnico pendiente de resolver con más investigación — el Documento 012 (§1) ya excluye por diseño cualquier método que sí podría alcanzar a ese segmento (scraping, rastreo no autorizado).
+
+### F. Herramientas de "email/teléfono finder" B2B — verificado que ninguna aplica sin sitio web propio (agosto 2026)
+
+A pedido explícito del cliente, se evaluó si un cruce con herramientas comerciales de enriquecimiento de contacto (Hunter.io, Apollo.io, RocketReach, Clearbit/Breeze Intelligence de HubSpot, Lusha) podría resolver el dato de teléfono/email para el comerciante sin sitio web. **Confirmado: las cinco dependen de que el negocio ya tenga un dominio de sitio web propio o un perfil profesional tipo LinkedIn como punto de entrada** — ninguna tiene un mecanismo de búsqueda que parta solo de "nombre de negocio + ciudad/dirección" sin esos anclajes. No aplican al caso de uso de comerciantes informales sin presencia web.
+
+La única excepción mecánica encontrada — herramientas que extraen listados de Google Maps por categoría+ubicación sin necesitar dominio (ej. Apify Google Maps Scraper, ScrapeHero) — no es una alternativa limpia: son scrapers de un listado de terceros (Google), fuera de la API oficial y de sus términos de uso, dentro de la misma categoría de scraping ya excluida por el Documento 012 §1.
+
+**Conclusión definitiva de esta línea de investigación:** un cruce de datos solo puede exponer un dato que ya esté publicado en alguna fuente legítima — no puede generar un teléfono/email que el propio negocio nunca publicó en ningún directorio, sitio web o perfil profesional. Para el comerciante más informal (sin RUC, sin sitio, sin Google Business Profile), ninguna combinación de fuentes legítimas investigadas en este documento resuelve el dato de contacto. La vía realista es cubrir bien al segmento que sí tiene algún rastro formal (RUC, y opcionalmente Google Places para quienes tengan ficha de Google) y tratar al resto como prospección de campo del propio equipo comercial, no como algo automatizable por Loges-BIAP.
 
 ---
 
