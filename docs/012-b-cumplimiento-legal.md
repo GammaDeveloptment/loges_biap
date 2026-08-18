@@ -1,7 +1,7 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.3
+**Versión:** 0.4
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -102,6 +102,18 @@ Ninguna fuente candidata del Documento 012 puede convertirse en un conector acti
 **Puntos explícitamente no verificados/pendientes**, a resolver por quien haga la evaluación real: términos de uso formales de SUNAT sobre uso automatizado; columnas exactas del padrón RUC; contenido y licencia del dataset de SUNARP en datos abiertos; vigencia post-2017 de las estadísticas de comercio exterior de SUNAT; contenido de los 8 datasets de MINCETUR.
 
 **Lectura preliminar solo para orientar dónde mirar primero** (no es una recomendación de aprobación): de lo investigado, el **Padrón RUC de Datos Abiertos** es la única fuente de la Categoría A con licencia de reuso explícita encontrada y con datos descargables en bulk — sería el punto de partida más eficiente para que el responsable legal empiece su revisión formal.
+
+### C. Redes sociales (TikTok, Meta/Instagram) — vías oficiales investigadas, ninguna viable como mecanismo de descubrimiento (agosto 2026)
+
+Se evaluó si alguna herramienta oficial de estas plataformas (no scraping) podría servir para descubrir negocios pequeños por categoría/ubicación. Hallazgo factual, no legal: **ninguna de las tres plataformas ofrece hoy un mecanismo oficial de búsqueda de negocios por categoría/ubicación.**
+
+- **Meta Ad Library** (`facebook.com/ads/library`): de acceso público, permite filtrar por país (incluido Perú) y palabra clave, y **solo** si el negocio paga publicidad activa en ese momento — devuelve nombre de la Página anunciante y un enlace a ella, nunca teléfono/email directo. Utilidad real: baja, porque la mayoría de comercios informales del tipo descrito no suelen pagar anuncios. La cobertura de la **API** (`ads_archive`) para anuncios comerciales no-políticos en Perú específicamente **no quedó confirmada** — solo el sitio web se verificó funcionando así.
+- **Meta Graph API (búsqueda de Páginas)**: la búsqueda abierta de páginas por categoría/ubicación fue eliminada por Meta desde ~2018-2019 y sigue sin existir en 2026 — la función vigente ("Page Public Content Access") solo sirve para consultar una Página que ya se conoce, requiere aprobación de Meta, no para descubrir nuevas.
+- **TikTok Research API**: sigue restringida a instituciones académicas/ONG en regiones específicas (no incluye Perú) y **prohíbe explícitamente su uso para herramientas comerciales** — queda descartada para este proyecto, no solo por dificultad de acceso sino por prohibición contractual directa.
+- **Instagram (Graph API "Business Discovery")**: solo permite consultar una cuenta cuyo `username` ya se conoce de antemano — no es una búsqueda por categoría/ubicación.
+- **Herramientas de audiencia/insights** (TikTok Creative Center, sucesoras de Meta Audience Insights): dan solo datos demográficos/de tendencia agregados, nunca nombres de negocios específicos.
+
+**Conclusión de esta investigación:** no existe hoy una vía de redes sociales, oficial y dentro de términos de servicio, comparable en utilidad al Padrón RUC de la Categoría A. Cualquier herramienta que sí "buscara" negocios en estas plataformas por palabra clave implicaría scraping no autorizado por sus términos de uso — fuera del alcance de este proyecto (`CLAUDE.md`: *"no hacemos scraping, no hacemos crawling"*).
 
 ---
 
