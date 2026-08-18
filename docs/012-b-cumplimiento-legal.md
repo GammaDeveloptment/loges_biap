@@ -1,7 +1,7 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.2
+**Versión:** 0.3
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -77,6 +77,31 @@ Cada fuente evaluada se documenta con esta estructura (una fila = una fuente can
 ## 7. Relación con los Siguientes Documentos
 
 Ninguna fuente candidata del Documento 012 puede convertirse en un conector activo sin pasar por el proceso de este documento — esto bloquea directamente la Entrega 2 del Documento 007 (MVP de Descubrimiento de Cargadores) hasta que al menos una fuente, en al menos un país, tenga una fila "Aprobada" en la plantilla de la sección 4. El Documento 013 — Infraestructura y Despliegue no debe habilitar salida de red hacia ninguna fuente que no tenga ese estado. El Documento 014 — Plan de Pruebas debe verificar que el sistema efectivamente rechaza la activación de una fuente sin `terminos_uso_verificados = true`, no solo que lo permite cuando sí lo tiene.
+
+## 8. Anexo — Investigación Factual de Fuentes Candidatas para Perú (agosto 2026)
+
+**Advertencia de alcance, otra vez:** lo que sigue es investigación puramente factual hecha por el equipo de desarrollo para adelantarle trabajo al responsable de la evaluación legal (sección 6) — **no es una evaluación del checklist de la sección 3, no llena la plantilla de la sección 4, y no constituye ninguna conclusión sobre si el uso de estas fuentes es legal.** Varios puntos quedan marcados explícitamente como no verificados; no deben asumirse como confirmados.
+
+### A. Registro mercantil/tributario general (para descubrir comerciantes por rubro + ubicación, Documento 012 §3 nota agregada)
+
+| Fuente | Tipo de consulta | API | Términos de uso | Tipo de dato |
+|---|---|---|---|---|
+| **SUNAT — Consulta RUC** (`e-consultaruc.sunat.gob.pe`) | Solo puntual: por RUC, DNI/CE/pasaporte, o razón social ya conocida. **No permite filtrar por actividad económica ni distrito** — no sirve para "descubrir" empresas nuevas por rubro/zona. | Existe una API oficial pero para validación de comprobantes de pago, requiere credenciales SOL del propio contribuyente — no es una API pública de búsqueda de terceros. | No se localizó una página de términos de uso general (solo aviso de copyright). **No verificado.** | Mezcla persona natural con negocio y persona jurídica, sin distinción de acceso. |
+| **Datos Abiertos — Padrón RUC** (`datosabiertos.gob.pe`) | Descarga masiva (no interactiva), publicaciones mensuales desde abril 2022. Formato CSV/ZIP — permitiría filtrar localmente por rubro/ubicación una vez descargado (inferido, columnas exactas no confirmadas). | N/A (descarga directa). | Licencia **Open Data Commons Attribution (ODC-BY)** indicada en la plataforma — reuso permitido con atribución a SUNAT. | Mezcla persona natural y jurídica. |
+| **SUNARP — Directorio de Personas Jurídicas** (`sunarp.gob.pe/bus-personas-juridicas.asp`) | Búsqueda por nombre/razón social; sin filtro por actividad ni ubicación. Gratuita, sin registro (según fuentes secundarias, no confirmado en vivo). | No se encontró API oficial. | El propio directorio se declara "referencial, sin valor legal probatorio". | Datos corporativos (personas jurídicas) únicamente. |
+
+### B. Comercio exterior (para identificar al consolidador/importador)
+
+| Fuente | Tipo de consulta | API | Términos de uso | Tipo de dato |
+|---|---|---|---|---|
+| **SUNAT — Estadísticas de Comercio Exterior** (`sunat.gob.pe/estad-comExt`) | Tablas predefinidas descargables, **desglosadas por importador/exportador individual** (razón social/RUC visible), además de por aduana, país y partida arancelaria. Cobertura observada mayormente 2000-2017 en las páginas revisadas — **vigencia de datos más recientes no verificada**. | No se encontró API documentada. | No encontrados explícitamente. | Corporativo (razón social/RUC del importador o exportador formal). |
+| **SUNAT — Operatividad Aduanera** (antes "ADUANET") | Portal para operadores/despachadores autorizados y clasificación arancelaria — no es un buscador de estadísticas por empresa. Propósito distinto al de arriba. | — | — | — |
+| **VUCE** (`vuce.gob.pe`, MINCETUR) | Sistema transaccional de trámites (permisos, licencias sanitarias/fitosanitarias) con autenticación de usuario — **no se encontró evidencia de que exponga públicamente listados o estadísticas de empresas importadoras/exportadoras**. Función de ventanilla de trámites, no de repositorio estadístico. | — | — | — |
+| **MINCETUR — Datos Abiertos** | 8 datasets publicados en `datosabiertos.gob.pe`, contenido no revisado individualmente — pendiente si se necesita. | — | — | — |
+
+**Puntos explícitamente no verificados/pendientes**, a resolver por quien haga la evaluación real: términos de uso formales de SUNAT sobre uso automatizado; columnas exactas del padrón RUC; contenido y licencia del dataset de SUNARP en datos abiertos; vigencia post-2017 de las estadísticas de comercio exterior de SUNAT; contenido de los 8 datasets de MINCETUR.
+
+**Lectura preliminar solo para orientar dónde mirar primero** (no es una recomendación de aprobación): de lo investigado, el **Padrón RUC de Datos Abiertos** es la única fuente de la Categoría A con licencia de reuso explícita encontrada y con datos descargables en bulk — sería el punto de partida más eficiente para que el responsable legal empiece su revisión formal.
 
 ---
 
