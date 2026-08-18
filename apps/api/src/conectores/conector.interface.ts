@@ -19,7 +19,12 @@ export interface CandidatoCargador {
     email?: string;
     telefono?: string;
   };
-  comercioExterior: {
+  // Opcional: un candidato descubierto por registro mercantil/tributario
+  // por rubro+ubicacion (Documento 012, seccion 3, nota agosto 2026) no
+  // tiene una declaracion de comercio exterior propia - a diferencia de un
+  // cargador que si importa/exporta a su nombre. No inventar este dato
+  // cuando la fuente real no lo provee.
+  comercioExterior?: {
     tipoOperacion: 'importacion' | 'exportacion';
     productoDescripcion: string;
     paisOrigen: string;

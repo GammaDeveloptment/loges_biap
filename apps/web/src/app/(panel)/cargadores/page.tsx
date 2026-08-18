@@ -185,17 +185,19 @@ export default function CargadoresPage() {
               </div>
             )}
 
-            <div className="card-seccion">
-              <h3>Comercio exterior</h3>
-              <div className="lista-simple" style={{ marginTop: '0.6rem' }}>
-                {ficha.registrosComercioExterior.map((r) => (
-                  <div className="item" key={r.id}>
-                    <span>{r.tipoOperacion}: {r.productoDescripcion} ({r.paisOrigen} → {r.paisDestino})</span>
-                    <span className="meta"><ChipConfianza nivel={r.nivelConfianza} /> {r.fuente.nombre}</span>
-                  </div>
-                ))}
+            {ficha.registrosComercioExterior.length > 0 && (
+              <div className="card-seccion">
+                <h3>Comercio exterior</h3>
+                <div className="lista-simple" style={{ marginTop: '0.6rem' }}>
+                  {ficha.registrosComercioExterior.map((r) => (
+                    <div className="item" key={r.id}>
+                      <span>{r.tipoOperacion}: {r.productoDescripcion} ({r.paisOrigen} → {r.paisDestino})</span>
+                      <span className="meta"><ChipConfianza nivel={r.nivelConfianza} /> {r.fuente.nombre}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {ficha.contactos.length > 0 && (
               <div className="card-seccion">

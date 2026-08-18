@@ -185,31 +185,35 @@ export class DescubrimientoCargadoresHandler {
     // seccion 3.5) sin columna "vigente" - pero re-detectar exactamente el
     // mismo hecho (mismo tipo/producto/origen/destino) en cada corrida no es
     // evidencia nueva, es la misma. Se deduplica por contenido, no por fecha.
-    const registroExistente = await tx.registroComercioExterior.findFirst({
-      where: {
-        empresaId: empresa.id,
-        fuenteId: fuente.id,
-        tipoOperacion: candidato.comercioExterior.tipoOperacion,
-        productoDescripcion: candidato.comercioExterior.productoDescripcion,
-        paisOrigen: candidato.comercioExterior.paisOrigen,
-        paisDestino: candidato.comercioExterior.paisDestino,
-      },
-    });
-    if (!registroExistente) {
-      await tx.registroComercioExterior.create({
-        data: {
+    // Un candidato descubierto por registro mercantil/tributario (Documento
+    // 012, seccion 3) no trae comercioExterior - no se inventa.
+    if (candidato.comercioExterior) {
+      const registroExistente = await tx.registroComercioExterior.findFirst({
+        where: {
           empresaId: empresa.id,
+          fuenteId: fuente.id,
           tipoOperacion: candidato.comercioExterior.tipoOperacion,
           productoDescripcion: candidato.comercioExterior.productoDescripcion,
           paisOrigen: candidato.comercioExterior.paisOrigen,
           paisDestino: candidato.comercioExterior.paisDestino,
-          periodoInicio: new Date(),
-          periodoFin: new Date(),
-          fuenteId: fuente.id,
-          nivelConfianza: fuente.nivelConfianzaBase,
-          ejecucionAgenteId: ejecucionId,
         },
       });
+      if (!registroExistente) {
+        await tx.registroComercioExterior.create({
+          data: {
+            empresaId: empresa.id,
+            tipoOperacion: candidato.comercioExterior.tipoOperacion,
+            productoDescripcion: candidato.comercioExterior.productoDescripcion,
+            paisOrigen: candidato.comercioExterior.paisOrigen,
+            paisDestino: candidato.comercioExterior.paisDestino,
+            periodoInicio: new Date(),
+            periodoFin: new Date(),
+            fuenteId: fuente.id,
+            nivelConfianza: fuente.nivelConfianzaBase,
+            ejecucionAgenteId: ejecucionId,
+          },
+        });
+      }
     }
 
     return esNueva ? 'nuevo' : 'actualizado';
