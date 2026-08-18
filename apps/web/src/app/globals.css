@@ -238,6 +238,27 @@ select:focus {
   border-top: 1px solid var(--borde);
 }
 
+/* --- Panel de inicio (Documento 006, seccion 3) --- */
+
+.grilla-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--espacio-4);
+}
+
+.tarjeta-resumen .numero {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--loges-azul-marino);
+  line-height: 1.2;
+}
+
+.tarjeta-resumen .subtitulo {
+  color: var(--texto-secundario);
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
+}
+
 /* --- Tabla --- */
 
 .contenedor-tabla {

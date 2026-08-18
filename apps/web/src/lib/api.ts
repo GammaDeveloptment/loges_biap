@@ -193,6 +193,8 @@ export interface EmpresaResumen {
   nivelConfianzaGeneral: NivelConfianza | null;
   fechaDescubrimiento: string;
   roles: { rol: string }[];
+  proveedorPerfil: { estadoEvaluacion: string } | null;
+  competidorPerfil: { tipo: string; fechaUltimoMonitoreo: string | null } | null;
 }
 
 export interface FichaEmpresa {
@@ -233,8 +235,10 @@ export interface FichaEmpresa {
   } | null;
 }
 
-export function listarEmpresas(params: { rol?: string; sector?: string; pais?: string }) {
-  const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as string[][]);
+export function listarEmpresas(params: { rol?: string; sector?: string; pais?: string; limite?: number }) {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== '') as string[][],
+  );
   return request<{ datos: EmpresaResumen[]; siguienteCursor: string | null }>(
     `/empresas?${qs.toString()}`,
     {},

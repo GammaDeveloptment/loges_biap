@@ -56,7 +56,14 @@ export class EmpresasService {
           estado: filtro.estado ?? 'activa',
           roles: { some: { rol: { in: rolesAConsultar }, vigente: true } },
         },
-        include: { roles: { where: { vigente: true } } },
+        include: {
+          roles: { where: { vigente: true } },
+          // Campos livianos, no la ficha completa - alcanzan para resumenes
+          // reales (ej. panel de inicio por area, Documento 006 seccion 3)
+          // sin forzar un round-trip por cada empresa de la pagina.
+          proveedorPerfil: { select: { estadoEvaluacion: true } },
+          competidorPerfil: { select: { tipo: true, fechaUltimoMonitoreo: true } },
+        },
         orderBy: { fechaDescubrimiento: 'desc' },
         take: tamanoPagina + 1,
         ...(filtro.cursor ? { cursor: { id: filtro.cursor }, skip: 1 } : {}),
