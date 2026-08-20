@@ -1,7 +1,7 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.8
+**Versión:** 0.9
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -146,6 +146,43 @@ A pedido explícito del cliente, se evaluó si un cruce con herramientas comerci
 La única excepción mecánica encontrada — herramientas que extraen listados de Google Maps por categoría+ubicación sin necesitar dominio (ej. Apify Google Maps Scraper, ScrapeHero) — no es una alternativa limpia: son scrapers de un listado de terceros (Google), fuera de la API oficial y de sus términos de uso, dentro de la misma categoría de scraping ya excluida por el Documento 012 §1.
 
 **Conclusión definitiva de esta línea de investigación:** un cruce de datos solo puede exponer un dato que ya esté publicado en alguna fuente legítima — no puede generar un teléfono/email que el propio negocio nunca publicó en ningún directorio, sitio web o perfil profesional. Para el comerciante más informal (sin RUC, sin sitio, sin Google Business Profile), ninguna combinación de fuentes legítimas investigadas en este documento resuelve el dato de contacto. La vía realista es cubrir bien al segmento que sí tiene algún rastro formal (RUC, y opcionalmente Google Places para quienes tengan ficha de Google) y tratar al resto como prospección de campo del propio equipo comercial, no como algo automatizable por Loges-BIAP.
+
+## 9. Ficha de Trabajo para Ricardo Ortega Silva — Primera Fuente a Evaluar (agosto 2026)
+
+**Para quién es esto:** Gammacargo designó a Ricardo Ortega Silva (sección 6) como responsable de ejecutar esta evaluación. Esta ficha existe para que no tenga que leer todo el documento — resume lo que ya se investigó (factual, no legal) y deja explícitamente qué preguntas solo él puede responder con respaldo de asesoría legal. **Nada de lo que sigue es una conclusión legal ni una aprobación** — es la plantilla de la sección 4 pre-llenada con lo factual, lista para que la complete y firme.
+
+**Fuente propuesta para empezar: Padrón RUC — Datos Abiertos (`datosabiertos.gob.pe`), Perú.** Se propone esta primera, entre todas las investigadas en la sección 8, porque es la única de la Categoría A (registro mercantil/tributario) con una licencia de reuso explícita ya encontrada (ODC-BY) — el resto tiene "términos de uso no verificados" o requieren más trabajo previo. Esto no significa que sea la única opción — si Ricardo prefiere evaluar otra fuente primero (ej. el Registro Mercantil de Costa Rica, ya usado como dato de prueba en el sistema), esta ficha se puede rehacer para esa fuente igual de rápido.
+
+### Plantilla (sección 4) — completada con lo factual conocido
+
+| Campo | Contenido conocido (factual) | Falta que Ricardo complete |
+|---|---|---|
+| País | Perú | — |
+| Categoría (Documento 012 §3) | Registro mercantil/tributario general, por rubro + ubicación | — |
+| Institución candidata | SUNAT — Padrón RUC, publicado como dataset abierto en `datosabiertos.gob.pe` (descargas mensuales en CSV/ZIP desde abril 2022) | — |
+| Tipo de dato expuesto | Mixto: mezcla persona natural con negocio propio y persona jurídica, sin distinción de acceso (ver sección 8-A) | Confirmar si esto cambia el análisis de base legal (pregunta 4 abajo) |
+| Base legal aplicable (si datos personales) | — | **Pendiente — es la pregunta central**: ¿bajo qué base de la normativa peruana de protección de datos personales se puede procesar el nombre de una persona natural con negocio propio que aparece en este padrón? |
+| Normativa sectorial/aduanera aplicable | No identificada explícitamente en la investigación factual | Confirmar si existe alguna restricción tributaria/SUNAT específica sobre el reuso de este dato más allá de la licencia ODC-BY |
+| Límites de uso identificados | Licencia **ODC-BY** (Open Data Commons Attribution) indicada en la plataforma — permite reuso con atribución a SUNAT. **No verificado en detalle contra el texto legal completo de la licencia.** | Confirmar alcance exacto de la licencia y qué atribución exacta requiere en el producto |
+| Resultado | — | **Aprobada / Rechazada / Pendiente** |
+| Responsable de la validación | Ricardo Ortega Silva | Confirmar calidad (¿legal interno de Gammacargo, asesoría externa?) |
+| Fecha de validación | — | — |
+| Referencia del respaldo legal | — | Documento, dictamen u opinión que sustenta el resultado |
+
+### Checklist (sección 3) — qué ya se sabe, qué falta
+
+| # | Pregunta | Estado |
+|---|---|---|
+| 1 | ¿Acceso público sin autenticación? | **Sí, conocido** — descarga directa, sin login. |
+| 2 | ¿Qué dicen los términos de uso sobre reuso comercial? | **Parcialmente conocido** — licencia ODC-BY encontrada en la plataforma; falta que Ricardo confirme que cubre el uso específico de Loges-BIAP (motor comercial, no solo consulta). |
+| 3 | ¿Tipo de dato: corporativo, personal, o ambos? | **Conocido** — ambos, mezclado sin distinción. |
+| 4 | ¿Base legal para procesar el dato personal? | **Pendiente — requiere a Ricardo.** Es la pregunta que más pesa en este caso. |
+| 5 | ¿Normativa aduanera/sectorial adicional? | **No identificada, no verificada a fondo — requiere a Ricardo.** |
+| 6 | ¿Límites de tasa/atribución a reflejar en el conector? | **Parcialmente conocido** — atribución a SUNAT por la licencia ODC-BY; sin límite de tasa aplicable (es descarga de archivo, no API con rate limit). |
+| 7 | ¿Requiere registro/convenio formal con la entidad? | **No identificado como necesario** para datos abiertos de descarga directa, pero no confirmado explícitamente — requiere a Ricardo. |
+| 8 | Nivel de riesgo y justificación | **Pendiente — es la conclusión de Ricardo**, no un dato que el equipo de desarrollo pueda estimar por él. |
+
+**Qué pasa después de que Ricardo complete esto:** si el resultado es "Aprobada", se registra la fuente real en el sistema (pantalla de Administración → Fuentes, ya construida y probada en la Entrega 6) con `terminos_uso_verificados = true`, el nombre de Ricardo como `aprobado_por`, la fecha, y la referencia legal — el backend ya rechaza duro cualquier intento de activarla sin esos datos completos (Documento 012 §4, verificado en la Entrega 6). Recién ahí se puede construir el conector real para esta fuente (Documento 012) y la Entrega 2 del roadmap deja de depender de datos sintéticos.
 
 ---
 
