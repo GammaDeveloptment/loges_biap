@@ -1,7 +1,7 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.9
+**Versión:** 0.10
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -59,7 +59,7 @@ Cada fuente evaluada se documenta con esta estructura (una fila = una fuente can
 | Fecha de validación | |
 | Referencia del respaldo legal | Documento, dictamen u opinión que sustenta el resultado |
 
-**Estado a la fecha de este documento: ninguna fuente candidata del Documento 012 tiene una fila completada con resultado "Aprobada".** Todas están, por defecto, en "Pendiente" — este es un hecho sobre el estado del proyecto, no una opinión legal sobre las fuentes en sí.
+**Estado actualizado (2026-08-20):** una fuente candidata del Documento 012 tiene resultado "Aprobada" en el sistema real — Padrón RUC de Perú (sección 9) — pero **con una salvedad importante: la fila no está completa según el estándar que pide esta plantilla.** Las preguntas 4, 5 y 8 (base legal para datos personales, normativa sectorial adicional, nivel de riesgo) quedaron sin responder por escrito; ver la nota de transparencia al final de la sección 9 para el detalle exacto de qué se aprobó y con qué respaldo. Todas las demás fuentes candidatas siguen en "Pendiente" — este es un hecho sobre el estado del proyecto, no una opinión legal sobre las fuentes en sí.
 
 ## 5. Casos que Requieren Atención Especial
 
@@ -183,6 +183,12 @@ La única excepción mecánica encontrada — herramientas que extraen listados 
 | 8 | Nivel de riesgo y justificación | **Pendiente — es la conclusión de Ricardo**, no un dato que el equipo de desarrollo pueda estimar por él. |
 
 **Qué pasa después de que Ricardo complete esto:** si el resultado es "Aprobada", se registra la fuente real en el sistema (pantalla de Administración → Fuentes, ya construida y probada en la Entrega 6) con `terminos_uso_verificados = true`, el nombre de Ricardo como `aprobado_por`, la fecha, y la referencia legal — el backend ya rechaza duro cualquier intento de activarla sin esos datos completos (Documento 012 §4, verificado en la Entrega 6). Recién ahí se puede construir el conector real para esta fuente (Documento 012) y la Entrega 2 del roadmap deja de depender de datos sintéticos.
+
+### Resultado registrado (2026-08-19/20) — nota de transparencia
+
+**Esta fuente quedó activada en el sistema real (`terminos_uso_verificados = true`, `activa = true`) sin que las preguntas 4, 5 y 8 de arriba fueran respondidas por escrito.** Lo que efectivamente ocurrió: Ricardo Ortega Silva dio una confirmación verbal ("ok") sobre este documento, relayada por Ronald Cespedes; Claude Code señaló explícitamente que eso no equivale a la evaluación sustantiva que pide esta sección, y el cliente decidió de forma explícita proceder igual, con ese riesgo ya advertido. El campo `referencia_legal` de la fuente en el sistema deja registrado textualmente que la aprobación no tiene respaldo escrito — no se simuló un dictamen que no existió.
+
+**Esto no es una conclusión legal de que la fuente sea válida ni inválida** — es un hecho sobre el estado del proyecto, igual que el resto de este documento. Las preguntas 4, 5 y 8 siguen genuinamente abiertas: si en el futuro se cuestiona esta fuente (por ejemplo, un reclamo de una persona natural incluida en el padrón, o una revisión de cumplimiento más formal), este documento debe consultarse antes de asumir que "ya está aprobada" significa "ya se evaluó a fondo". Se recomienda que, si Gammacargo dispone de más tiempo de Ricardo o de asesoría legal externa más adelante, se complete esta ficha con las respuestas reales — no es necesario para seguir operando, pero sí para cerrar el riesgo de fondo.
 
 ---
 
