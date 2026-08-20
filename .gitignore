@@ -9,3 +9,9 @@ build/
 coverage/
 .DS_Store
 Thumbs.db
+
+# Cache generado por scripts/actualizar-cache-padron-ruc.ts (Documento 012-B,
+# seccion 9) - derivado, reproducible corriendo el script, no se versiona por
+# tamano (decenas de MB) y porque cambia cada vez que SUNAT publica una
+# version nueva del Padron RUC.
+apps/api/prisma/data/

@@ -52,51 +52,14 @@ const CATALOGO_SINTETICO: CandidatoCargador[] = [
       paisDestino: 'CR',
     },
   },
-  // Candidatos de Peru descubiertos por registro mercantil/tributario por
-  // rubro+ubicacion (Documento 012, seccion 3, nota agosto 2026), no por
-  // comercio exterior propio - modelan el patron de consolidacion descrito
-  // por el cliente (varios comerciantes pequenos, un tercero importa el
-  // contenedor). Por eso, a diferencia del catalogo de Costa Rica arriba,
-  // estos candidatos NO tienen "comercioExterior" ni "contacto": el Padron
-  // RUC de SUNAT (investigado en el Documento 012-B, anexo D) solo expone
-  // razon social, rubro y domicilio fiscal - nunca telefono ni email. No
-  // se inventa ese dato aqui para que la demo no genere una expectativa
-  // que la fuente real no va a poder cumplir.
-  {
-    nombreLegal: 'Comercial Repuestos El Faro E.I.R.L.',
-    identificadorFiscal: 'PE-SIM-0004',
-    pais: 'PE',
-    sector: 'repuestos_automotrices',
-    direccion: 'Jr. Montevideo 1245, Cercado de Lima, Lima, Peru',
-  },
-  {
-    nombreLegal: 'Textiles y Confecciones Rimac S.A.C.',
-    identificadorFiscal: 'PE-SIM-0005',
-    pais: 'PE',
-    sector: 'textiles',
-    direccion: 'Jr. Andahuaylas 340, Cercado de Lima, Lima, Peru',
-  },
-  {
-    nombreLegal: 'Moda Express Gamarra S.A.C.',
-    identificadorFiscal: 'PE-SIM-0006',
-    pais: 'PE',
-    sector: 'ropa',
-    direccion: 'Jr. Gamarra 815, La Victoria, Lima, Peru',
-  },
-  {
-    nombreLegal: 'Calzados San Jacinto E.I.R.L.',
-    identificadorFiscal: 'PE-SIM-0007',
-    pais: 'PE',
-    sector: 'calzado',
-    direccion: 'Jr. Paruro 1120, Cercado de Lima, Lima, Peru',
-  },
-  {
-    nombreLegal: 'Importaciones de Accesorios Tecno Cell S.A.C.',
-    identificadorFiscal: 'PE-SIM-0008',
-    pais: 'PE',
-    sector: 'accesorios_celular',
-    direccion: 'Av. Wilson 632, Cercado de Lima, Lima, Peru',
-  },
+  // Los candidatos sinteticos de Peru (patron de registro mercantil/
+  // tributario por rubro+ubicacion, Documento 012 seccion 3) se retiraron de
+  // este catalogo el 2026-08-20: el Padron RUC real (Documento 012-B seccion
+  // 9) ya quedo aprobado y activado como fuente, y ahora lo sirve
+  // ConectorRealPadronRucPeru en vez de datos inventados - dejar ambos
+  // mezclaria demo sintetica con datos reales del mismo pais sin necesidad.
+  // Costa Rica sigue sin fuente real aprobada, por eso su catalogo sintetico
+  // arriba se mantiene.
 ];
 
 @Injectable()

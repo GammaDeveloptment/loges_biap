@@ -1,7 +1,7 @@
 # Documento 012 — Arquitectura de Scraping y Conectores
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.2
+**Versión:** 0.3
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -88,6 +88,16 @@ Mapeo entre los módulos del Documento 003 y las categorías de fuente que neces
 ## 6. Relación con los Siguientes Documentos
 
 El **Documento 012-B — Cumplimiento Legal de Fuentes** es el paso obligatorio siguiente: decide qué instituciones concretas, por país, pueden implementarse como conectores según este contrato, y bajo qué condiciones. El Documento 013 — Infraestructura y Despliegue debe considerar que el backend necesita salida de red hacia estas fuentes externas (relevante junto con la restricción de VPN del Documento 004). El Documento 014 — Plan de Pruebas debe incluir pruebas específicas de comportamiento ante fuentes caídas, con formato cambiado, o que excedan el límite de tasa — no solo el camino feliz.
+
+## 7. Primer Conector Real Construido — Padrón RUC, Perú (agosto 2026)
+
+Tras la aprobación (con salvedad de transparencia, Documento 012-B sección 9) de la fuente "Padrón RUC - Datos Abiertos (SUNAT, Perú)", se construyó el primer conector real del proyecto (`ConectorRealPadronRucPeru`), reemplazando a los candidatos sintéticos de Perú del conector simulado (Documento 014, sección 6) — Costa Rica sigue sin fuente real aprobada, así que su catálogo sintético se mantiene sin cambios.
+
+**Desviación deliberada del ciclo puramente "en vivo":** el dataset real es un CSV de ~3.3 GB publicado mensualmente (sin API de consulta), demasiado grande para descargar en cada ejecución del Motor de Agentes sin violar el principio de respetar los límites de la fuente (Documento 012-B, sección 3, pregunta 6). Por eso el conector no llama a la fuente en vivo: lee un **caché local pre-filtrado** (`apps/api/prisma/data/padron-ruc-lima-cache.json`, generado y regenerado por `scripts/actualizar-cache-padron-ruc.ts`, corrido manualmente — no automatizado con cron todavía). El script descarga el ZIP, lo procesa en streaming (nunca carga los ~3.3 GB completos en memoria), y guarda solo las filas de Lima que coinciden con los rubros de interés del cliente (repuestos automotrices, textiles, ropa, calzado, accesorios de celular — los mismos del catálogo sintético original). Al 2026-08-20, sobre 13.36 millones de filas nacionales, esto produjo ~154 mil candidatos filtrados para Lima.
+
+**Limitación real descubierta al construirlo, no asumida de antemano:** el dataset real no expone razón social ni dirección exacta — solo RUC, actividad económica y ubicación a nivel distrito (ver Documento 012-B, sección 8-D, corregida el 2026-08-20 tras inspeccionar el archivo real en vez de confiar en investigación previa sin verificar). El conector nunca inventa un nombre: usa `"RUC {numero} (sin razon social - el Padron RUC no la expone)"` como marcador explícito, y la dirección aproximada se marca igual de explícita como "ubicación aproximada por distrito". Esta es una decisión de producto explícita del cliente (2026-08-20): construir el conector igual, aceptando candidatos sin nombre como punto de partida para prospección manual del equipo comercial, en vez de esperar a evaluar legalmente un segundo servicio (la consulta interactiva de SUNAT) que sí tendría nombre.
+
+**Mantenimiento pendiente, explícito:** el caché debe regenerarse corriendo `npm run actualizar:padron-ruc` (desde `apps/api`) cada vez que SUNAT publique una versión nueva del Padrón RUC (mensual) — no hay automatización todavía. El archivo de caché no se versiona en git (`.gitignore`) por su tamaño y porque es datos derivados, reproducibles corriendo el script.
 
 ---
 

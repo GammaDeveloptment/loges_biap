@@ -7,6 +7,7 @@ import { DescubrimientoCargadoresHandler } from './handlers/descubrimiento-carga
 import { EnriquecimientoProveedoresHandler } from './handlers/enriquecimiento-proveedores.handler';
 import { MonitoreoCompetidoresHandler } from './handlers/monitoreo-competidores.handler';
 import { ConectorSimuladoCargadores } from '../conectores/conector-simulado-cargadores';
+import { ConectorRealPadronRucPeru } from '../conectores/conector-real-padron-ruc-peru';
 import { ConectorSimuladoCargadoresSecundario } from '../conectores/conector-simulado-cargadores-secundario';
 import { ConectorSimuladoProveedores } from '../conectores/conector-simulado-proveedores';
 import { ConectorSimuladoCompetidores } from '../conectores/conector-simulado-competidores';
@@ -22,6 +23,7 @@ import { RazonamientoModule } from '../razonamiento/razonamiento.module';
     EnriquecimientoProveedoresHandler,
     MonitoreoCompetidoresHandler,
     ConectorSimuladoCargadores,
+    ConectorRealPadronRucPeru,
     ConectorSimuladoCargadoresSecundario,
     ConectorSimuladoProveedores,
     ConectorSimuladoCompetidores,

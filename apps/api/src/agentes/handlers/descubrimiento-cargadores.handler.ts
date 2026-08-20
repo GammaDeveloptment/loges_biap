@@ -3,6 +3,7 @@ import type { Prisma } from '@prisma/client';
 import type { NivelConfianza } from '@loges-biap/shared-types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConectorSimuladoCargadores } from '../../conectores/conector-simulado-cargadores';
+import { ConectorRealPadronRucPeru } from '../../conectores/conector-real-padron-ruc-peru';
 import type { CandidatoCargador } from '../../conectores/conector.interface';
 import { ConectorSimuladoCargadoresSecundario } from '../../conectores/conector-simulado-cargadores-secundario';
 import { PROVEEDOR_RAZONAMIENTO } from '../../razonamiento/razonamiento.module';
@@ -31,7 +32,8 @@ export class DescubrimientoCargadoresHandler {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly conector: ConectorSimuladoCargadores,
+    private readonly conectorCR: ConectorSimuladoCargadores,
+    private readonly conectorPeru: ConectorRealPadronRucPeru,
     private readonly conectorSecundario: ConectorSimuladoCargadoresSecundario,
     @Inject(PROVEEDOR_RAZONAMIENTO) private readonly razonamiento: ProveedorRazonamiento,
   ) {}
@@ -42,17 +44,28 @@ export class DescubrimientoCargadoresHandler {
   ): Promise<string> {
     // `fuente` no tiene RLS por area (Documento 011, seccion 5) - se puede
     // leer directo, sin paraArea.
-    const fuente = await this.prisma.fuente.findFirst({
-      where: { nombre: this.conector.fuenteNombre, activa: true },
+    const fuenteCR = await this.prisma.fuente.findFirst({
+      where: { nombre: this.conectorCR.fuenteNombre, activa: true },
     });
     const fuenteSecundaria = await this.prisma.fuente.findFirst({
       where: { nombre: this.conectorSecundario.fuenteNombre, activa: true },
     });
-    if (!fuente || !fuenteSecundaria) {
+    if (!fuenteCR || !fuenteSecundaria) {
       throw new Error('Alguna de las fuentes simuladas no existe o no esta activa - correr el seed (prisma/seed.ts).');
     }
+    // Documento 012-B, seccion 9: fuente real, aprobada con salvedad de
+    // transparencia (ver esa seccion) - a diferencia de las simuladas de
+    // arriba, que no esta activa no es un error de configuracion del seed,
+    // es un estado legitimo (ej. un ambiente donde todavia no se aprobo) -
+    // se omite en silencio, no revienta la corrida entera de descubrimiento.
+    const fuentePeru = await this.prisma.fuente.findFirst({
+      where: { nombre: this.conectorPeru.fuenteNombre, activa: true },
+    });
 
-    const respuesta = await this.conector.consultar(criterios);
+    const respuestaCR = await this.conectorCR.consultar(criterios);
+    const respuestaPeru = fuentePeru
+      ? await this.conectorPeru.consultar(criterios)
+      : { fechaConsulta: new Date(), candidatos: [] };
     const respuestaSecundaria = await this.conectorSecundario.consultar();
 
     let nuevos = 0;
@@ -67,11 +80,20 @@ export class DescubrimientoCargadoresHandler {
     // politicas del Documento 011, por eso se reutiliza aqui (ver
     // PrismaService.paraArea).
     await this.prisma.paraArea('direccion_general', async (tx) => {
-      for (const candidato of respuesta.candidatos) {
-        const resultado = await this.procesarCandidatoPrimario(tx, candidato, fuente, ejecucionId);
+      for (const candidato of respuestaCR.candidatos) {
+        const resultado = await this.procesarCandidatoPrimario(tx, candidato, fuenteCR, ejecucionId);
         if (resultado === 'nuevo') nuevos++;
         else if (resultado === 'excluido') excluidos++;
         else actualizados++;
+      }
+
+      if (fuentePeru) {
+        for (const candidato of respuestaPeru.candidatos) {
+          const resultado = await this.procesarCandidatoPrimario(tx, candidato, fuentePeru, ejecucionId);
+          if (resultado === 'nuevo') nuevos++;
+          else if (resultado === 'excluido') excluidos++;
+          else actualizados++;
+        }
       }
 
       for (const candidatoSecundario of respuestaSecundaria.candidatos) {
@@ -86,8 +108,9 @@ export class DescubrimientoCargadoresHandler {
       }
     }, { timeoutMs: 60_000 });
 
+    const totalPrimarios = respuestaCR.candidatos.length + respuestaPeru.candidatos.length;
     return (
-      `Encontrados ${respuesta.candidatos.length} candidatos: ${nuevos} nuevos, ${actualizados} ya existentes, ` +
+      `Encontrados ${totalPrimarios} candidatos: ${nuevos} nuevos, ${actualizados} ya existentes, ` +
       `${excluidos} excluidos (cliente actual o descartados, Documento 009 seccion 2.1). ` +
       `Fuente secundaria: ${corroboraciones} datos corroborados (confianza elevada), ${conflictos} discrepancias reales (pendientes de reverificacion, Documento 009 seccion 5).`
     );
