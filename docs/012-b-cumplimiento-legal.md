@@ -1,7 +1,7 @@
 # Documento 012-B — Cumplimiento Legal de Fuentes de Comercio Exterior y Datos
 
 **Proyecto:** Loges-BIAP — Inteligencia Comercial y Logística, Grupo Gammacargo
-**Versión:** 0.10
+**Versión:** 0.11
 **Fecha:** Julio 2026 (actualizado agosto 2026)
 
 ---
@@ -116,9 +116,17 @@ Se evaluó si alguna herramienta oficial de estas plataformas (no scraping) podr
 
 **Conclusión de esta investigación:** no existe hoy una vía de redes sociales, oficial y dentro de términos de servicio, comparable en utilidad al Padrón RUC de la Categoría A. Cualquier herramienta que sí "buscara" negocios en estas plataformas por palabra clave implicaría scraping no autorizado por sus términos de uso — fuera del alcance de este proyecto (`CLAUDE.md`: *"no hacemos scraping, no hacemos crawling"*).
 
-### D. Campos reales del Padrón RUC, y Google Places API como posible complemento para el dato de contacto (agosto 2026)
+### D. Campos reales del Padrón RUC, y Google Places API como posible complemento para el dato de contacto (agosto 2026; **corregido 2026-08-20 tras descargar e inspeccionar el archivo real**)
 
-**Confirmado — el Padrón RUC/consulta pública de SUNAT no expone teléfono ni email.** Campos verificados: RUC, razón social/nombre comercial, tipo de contribuyente, estado, condición de domicilio, fecha de inicio de actividades, actividad(es) económica(s) (CIIU), y domicilio fiscal completo (tipo/nombre de vía, número, ubigeo). Datos más completos (representante legal, etc.) requieren autenticación del propio contribuyente con Clave SOL — no accesibles para terceros. Esto confirma que esta fuente da **nombre + dirección física**, no un canal de contacto directo.
+**⚠️ Corrección importante:** la versión anterior de este párrafo describía los campos de la **consulta interactiva de SUNAT** (`e-consultaruc.sunat.gob.pe`, búsqueda de a un RUC ya conocido) como si fueran los del **dataset masivo de Datos Abiertos** (`datosabiertos.gob.pe`, el que de hecho quedó activado como fuente en la sección 9) — son dos servicios distintos de SUNAT, y se habían mezclado sus campos. Se descargó el archivo real (`PadronRUC_202510.zip`, 236 MB comprimido / ~3.37 GB de CSV) para verificar de verdad, en vez de seguir asumiendo.
+
+**Columnas reales confirmadas del dataset de Datos Abiertos:** `RUC, Estado, Condicion, Tipo, Actividad_Economica_CIIU_revision3_Principal, Actividad_Economica_CIIU_revision3_Secundaria, Actividad_Economica_CIIU_revision4_Principal, NroTrab, TipoFacturacion, TipoContabilidad, ComercioExterior, UBIGEO, Departamento, Provincia, Distrito, PERIODO_PUBLICACION`.
+
+**No tiene razón social ni dirección — de ningún tipo.** Solo dice, por cada RUC, qué actividad económica declara y en qué distrito está (UBIGEO/Departamento/Provincia/Distrito, no una dirección exacta). Esto es más limitado de lo que se había asumido: con esta fuente sola, el resultado de un descubrimiento por rubro+ubicación es **"existen N contribuyentes con esta actividad en este distrito"**, sin nombre — no alcanza para generar un candidato de venta contactable, que es el caso de uso que motivó toda esta investigación.
+
+Para obtener nombre y dirección de un RUC específico haría falta la consulta interactiva (`e-consultaruc.sunat.gob.pe`), que es un servicio distinto, pensado para consultas puntuales de a una (no bulk, no filtrable por rubro/ubicación), con términos de uso **no verificados** (sección 8-A) — automatizar consultas masivas contra ese servicio es una fuente y una evaluación legal aparte, no cubierta por la aprobación de la sección 9, que fue específicamente sobre el dataset masivo. Datos más completos (representante legal, etc.) requieren además autenticación del propio contribuyente con Clave SOL — no accesibles para terceros bajo ningún mecanismo público.
+
+**Impacto en la fuente ya activada (sección 9):** la fuente "Padrón RUC - Datos Abiertos (SUNAT, Peru)" sigue activa en el sistema tal como fue aprobada, pero un conector real construido sobre ella solo podría producir candidatos **sin nombre** — de valor comercial limitado por sí solos. Antes de construir ese conector, hace falta decidir explícitamente si (a) se usa igual, aceptando candidatos sin nombre como punto de partida para prospección manual del equipo comercial, (b) se evalúa por separado la consulta interactiva de SUNAT para complementar el nombre (nueva evaluación legal, no cubierta por lo ya aprobado), o (c) se prioriza otra fuente que sí tenga nombre (ej. SUNARP, sección 8-A, aunque sin filtro por rubro/ubicación).
 
 **Google Places API (Google Maps Platform)** se investigó como posible complemento para el dato de contacto, ya que sí es un producto comercial oficial (no scraping) diseñado explícitamente para buscar negocios por categoría + ubicación:
 
